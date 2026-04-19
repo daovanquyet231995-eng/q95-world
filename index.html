@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>q95.world - Game Portal</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
@@ -24,6 +25,7 @@
         }
         #install-app-btn {
             animation: pulse 2s infinite;
+            display: none; /* Ẩn nút đi cho đến khi điện thoại cho phép tải */
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -41,7 +43,7 @@
                     Q95.WORLD
                 </h1>
             </div>
-            <button id="install-app-btn" class="bg-white/10 hover:bg-white/20 text-sm font-bold py-2 px-4 rounded-full transition-colors flex items-center gap-2">
+            <button id="install-app-btn" class="bg-white/10 hover:bg-white/20 text-sm font-bold py-2 px-4 rounded-full transition-colors items-center gap-2">
                 <span>📱</span> Install App
             </button>
         </div>
@@ -76,134 +78,49 @@
                 </div>
             </a>
 
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
-
-            <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                <p class="text-slate-400 text-xs mb-4">In development...</p>
-                <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-            </div>
+            <script>
+                for(let i=0; i<18; i++) {
+                    document.write(`
+                    <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
+                        <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
+                        <h3 class="font-bold text-lg mb-1">Secret Project</h3>
+                        <p class="text-slate-400 text-xs mb-4">In development...</p>
+                        <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
+                    </div>
+                    `);
+                }
+            </script>
 
         </div>
     </main>
 
+    <script>
+        // Đăng ký Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-app-btn');
+
+        // Bắt sự kiện khi điện thoại sẵn sàng cho phép cài đặt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'flex'; // Hiện nút lên
+        });
+
+        // Xử lý khi bấm nút Install
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+    </script>
 </body>
 </html>

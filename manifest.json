@@ -1,0 +1,16 @@
+{
+  "name": "Q95 World",
+  "short_name": "Q95",
+  "start_url": "/q95-world/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icon-piggy.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
