@@ -1,0 +1,780 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jumping moon</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #050510;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+            touch-action: non
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to canvas */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00ffff;
+            color: #fff;
+        }
+
+        .neon-text-red {
+            text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055, 0 0 40px #ff0055;
+            color: #fff;
+        }
+
+        #score-display {
+            position: absolute;
+            top: 20px;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            transition: transform 0.1s;
+        }
+
+        #start-screen, #game-over-screen {
+            background: rgba(5, 5, 16, 0.85);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            pointer-events: auto; /* Allow clicks on buttons */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #game-over-screen {
+            border-color: #ff0055;
+            box-shadow: 0 0 30px rgba(255, 0, 85, 0.3);
+            display: none;
+        }
+
+        h1 {
+            font-size: 40px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        p {
+            font-size: 16px;
+            color: #ccc;
+            letter-spacing: 1px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: #050510;
+            background-color: #00ffff;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 15px #00ffff;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 5px #00ffff;
+        }
+
+        #game-over-screen button {
+            background-color: #ff0055;
+            box-shadow: 0 0 15px #ff0055;
+            color: white;
+        }
+
+        #top-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        .icon-btn {
+            background: rgba(5, 5, 16, 0.6);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            padding: 0;
+            margin: 0;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.9);
+        }
+
+        #pause-screen {
+            background: rgba(5, 5, 16, 0.95);
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            z-index: 50;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 30px; }
+            button { padding: 12px 30px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="score-display" class="neon-text">0</div>
+
+        <div id="top-controls">
+            <button id="pause-btn" class="icon-btn" style="display: none;">⏸</button>
+            <button id="mute-btn" class="icon-btn">🔊</button>
+        </div>
+
+        <div id="start-screen">
+            <h1 class="neon-text">JUMPING MOON</h1>
+            <p>High Score: <span id="start-high-score" class="neon-text">0</span></p>
+            <p>Tap the screen to flip gravity</p>
+            <p>Avoid the red obstacles!</p>
+            <button id="start-btn">PLAY NOW</button>
+        </div>
+
+        <div id="game-over-screen">
+            <h1 class="neon-text-red">CRASHED!</h1>
+            <p>Your Score: <span id="final-score" class="neon-text" style="font-size: 24px; margin-left: 10px;">0</span></p>
+            <p>High Score: <span id="game-over-high-score" class="neon-text" style="font-size: 24px; margin-left: 10px;">0</span></p>
+            <button id="restart-btn">PLAY AGAIN</button>
+        </div>
+
+        <div id="pause-screen">
+            <h1 class="neon-text">PAUSED</h1>
+            <button id="resume-btn">RESUME</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI Elements
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const scoreDisplay = document.getElementById('score-display');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const muteBtn = document.getElementById('mute-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+        const pauseScreen = document.getElementById('pause-screen');
+        const startHighScoreDisplay = document.getElementById('start-high-score');
+        const gameOverHighScoreDisplay = document.getElementById('game-over-high-score');
+
+        // Game State
+        let gameState = 'MENU'; // MENU, PLAYING, GAMEOVER, PAUSED
+        let score = 0;
+        let highScore = localStorage.getItem('neonGravityHighScore') || 0;
+        let gameSpeed = 6;
+        let frameCount = 0;
+        let animationId;
+        let isMuted = false;
+
+        // Init high score display
+        startHighScoreDisplay.innerText = highScore;
+
+        // Audio Context (Web Audio API)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Hàm tạo âm thanh cơ bản
+        function playTone(freq, type, duration, vol=0.1, slideFreq=null) {
+            if (!audioCtx || isMuted) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            if (slideFreq) {
+                osc.frequency.exponentialRampToValueAtTime(slideFreq, audioCtx.currentTime + duration);
+            }
+            
+            gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playJumpSound() {
+            // Tiếng vút nhẹ khi đảo chiều (tần số vuốt lên/xuống tùy thuộc chiều)
+            const targetFreq = player.isFlipped ? 300 : 600;
+            const startFreq = player.isFlipped ? 600 : 300;
+            playTone(startFreq, 'sine', 0.15, 0.1, targetFreq);
+        }
+
+        function playScoreSound() {
+            // Tiếng "Ting" nhẹ khi ghi điểm
+            playTone(880, 'sine', 0.1, 0.1, 1200);
+        }
+
+        function playCrashSound() {
+            // Tiếng nổ rè (sawtooth) trầm dần khi va chạm
+            playTone(150, 'sawtooth', 0.4, 0.2, 40);
+        }
+
+        // Dimensions
+        let width, height;
+        let ceilingY, floorY;
+        const margin = 80; // Distance from top/bottom to the running lines
+
+        // Star background
+        let stars = [];
+        const numStars = 150;
+
+        // Cloud background (Parallax)
+        let clouds = [];
+        const numClouds = 10;
+
+        function initClouds() {
+            clouds = [];
+            const w = window.innerWidth || 800;
+            for(let i = 0; i < numClouds; i++) {
+                clouds.push({
+                    x: Math.random() * w,
+                    y: floorY + 15 + Math.random() * 40, // Rải rác tự nhiên hơn dưới đáy
+                    size: Math.random() * 20 + 15, 
+                    speed: Math.random() * 0.15 + 0.05, // GIẢM TỐC ĐỘ: Trôi rất chậm (Parallax chuẩn)
+                    opacity: Math.random() * 0.1 + 0.05 // GIẢM ĐỘ SÁNG: Mây mềm mại, êm dịu hơn không làm gắt mắt
+                });
+            }
+        }
+
+        function initStars() {
+            stars = [];
+            const w = window.innerWidth || 800;
+            const h = window.innerHeight || 600;
+            for(let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    size: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            ceilingY = margin;
+            floorY = height - margin;
+            initStars();
+            initClouds();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Game Objects
+        const player = {
+            x: width * 0.2,
+            y: 0,
+            radius: 15,
+            velocity: 0,
+            gravity: 1.2,
+            isFlipped: false,
+            color: '#00ffff',
+            trail: []
+        };
+
+        let obstacles = [];
+        let particles = [];
+
+        // Colors
+        const colors = {
+            bg: '#050510',
+            line: '#1a1a3a',
+            player: '#00ffff',
+            obstacle: '#ff0055'
+        };
+
+        function initGame() {
+            initAudio(); // Khởi tạo âm thanh khi người chơi bấm nút (bắt buộc bởi trình duyệt)
+            
+            player.x = width * 0.2;
+            player.y = floorY - player.radius;
+            player.velocity = 0;
+            player.isFlipped = false;
+            player.gravity = 1.2;
+            player.trail = [];
+            
+            obstacles = [];
+            particles = [];
+            score = 0;
+            gameSpeed = 6;
+            frameCount = 0;
+            scoreDisplay.innerText = score;
+            
+            gameState = 'PLAYING';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            scoreDisplay.style.display = 'block';
+            pauseBtn.style.display = 'flex';
+            
+            animate();
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            pauseBtn.style.display = 'none';
+            cancelAnimationFrame(animationId);
+            createExplosion(player.x, player.y, player.color);
+            playCrashSound(); // Phát âm thanh va chạm
+            
+            // Cập nhật điểm cao nhất
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('neonGravityHighScore', highScore);
+            }
+            startHighScoreDisplay.innerText = highScore;
+            gameOverHighScoreDisplay.innerText = highScore;
+            
+            // Draw one last frame to show explosion
+            draw();
+            
+            setTimeout(() => {
+                gameOverScreen.style.display = 'flex';
+                finalScoreDisplay.innerText = score;
+                scoreDisplay.style.display = 'none';
+            }, 500);
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                cancelAnimationFrame(animationId);
+                pauseScreen.style.display = 'flex';
+                pauseBtn.style.display = 'none';
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseScreen.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+                animate();
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            muteBtn.innerText = isMuted ? '🔇' : '🔊';
+        }
+
+        function flipGravity() {
+            if (gameState !== 'PLAYING') return;
+            player.isFlipped = !player.isFlipped;
+            player.gravity = player.isFlipped ? -1.2 : 1.2;
+            playJumpSound(); // Phát âm thanh nhảy
+        }
+
+        // Input handling
+        window.addEventListener('mousedown', (e) => {
+            if(e.target.tagName !== 'BUTTON') flipGravity();
+        });
+        window.addEventListener('touchstart', (e) => {
+            if(e.target.tagName !== 'BUTTON') flipGravity();
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') flipGravity();
+            if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
+        });
+
+        startBtn.addEventListener('click', initGame);
+        restartBtn.addEventListener('click', initGame);
+        muteBtn.addEventListener('click', toggleMute);
+        pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+
+        // --- Logic & Rendering ---
+
+        function spawnObstacle() {
+            const isTop = Math.random() > 0.5;
+            const widthObj = 30 + Math.random() * 40;
+            let heightObj = 40 + Math.random() * 60;
+            
+            let obsType = 0; // 0: Tĩnh, 1: Lên xuống, 2: Lơ lửng giữa, 3: Cổng kép
+
+            // Hệ thống tăng độ khó theo điểm số
+            if (score >= 10 && score < 20) {
+                if (Math.random() > 0.6) obsType = 1; // 40% xuất hiện chướng ngại vật di chuyển
+            } else if (score >= 20 && score < 30) {
+                let r = Math.random();
+                if (r > 0.7) obsType = 2; // 30% xuất hiện ở giữa
+                else if (r > 0.4) obsType = 1; // 30% xuất hiện di chuyển
+            } else if (score >= 30) {
+                let r = Math.random();
+                if (r > 0.8) obsType = 3; // 20% xuất hiện cổng kép
+                else if (r > 0.5) obsType = 2; 
+                else if (r > 0.2) obsType = 1; 
+            }
+
+            let yPos;
+            let yPos2, height2; // Biến cho cổng kép
+            let startY = 0, moveRange = 0, moveSpeed = 0;
+
+            if (obsType === 0) {
+                // Cơ bản (0-9)
+                yPos = isTop ? ceilingY : floorY - heightObj;
+            } else if (obsType === 1) {
+                // Di chuyển lên xuống (10+)
+                yPos = isTop ? ceilingY : floorY - heightObj;
+                startY = yPos;
+                moveRange = 20 + Math.random() * 40;
+                moveSpeed = 0.05 + Math.random() * 0.05;
+            } else if (obsType === 2) {
+                // Lơ lửng ở giữa (20+)
+                heightObj = 30 + Math.random() * 30;
+                yPos = ceilingY + (floorY - ceilingY) / 2 - heightObj / 2 + (Math.random() * 60 - 30);
+            } else if (obsType === 3) {
+                // Cổng kép - Chừa 1 khe ở giữa (30+)
+                let gap = 130 + Math.random() * 30; // Khe hở để người chơi lọt qua
+                heightObj = 30 + Math.random() * ((floorY - ceilingY) - gap - 60);
+                yPos = ceilingY; // Cột trên
+                
+                yPos2 = ceilingY + heightObj + gap; // Cột dưới
+                height2 = floorY - yPos2;
+            }
+
+            // Đẩy chướng ngại vật chính vào mảng
+            obstacles.push({
+                x: width + 50,
+                y: yPos,
+                width: widthObj,
+                height: heightObj,
+                passed: false,
+                type: obsType,
+                startY: startY,
+                moveRange: moveRange,
+                moveSpeed: moveSpeed,
+                moveOffset: Math.random() * Math.PI * 2 // Góc pha lệch ngẫu nhiên để nó lắc nhịp nhàng
+            });
+
+            // Nếu là cổng kép, thêm phần cột bên dưới nối theo cột trên
+            if (obsType === 3) {
+                obstacles.push({
+                    x: width + 50,
+                    y: yPos2,
+                    width: widthObj,
+                    height: height2,
+                    passed: true, // Tránh cộng 2 điểm cho cùng 1 cổng
+                    type: 0 
+                });
+            }
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    radius: Math.random() * 4 + 2,
+                    color: color,
+                    life: 1,
+                    decay: Math.random() * 0.02 + 0.02
+                });
+            }
+        }
+
+        function update() {
+            frameCount++;
+            
+            // Increase difficulty smoothly
+            if (frameCount % 300 === 0) gameSpeed += 0.5;
+
+            // Spawn obstacles
+            // Frequency depends on screen width to feel consistent
+            let spawnRate = Math.floor(120 - (gameSpeed * 2));
+            if (spawnRate < 40) spawnRate = 40;
+            if (frameCount % spawnRate === 0) {
+                spawnObstacle();
+            }
+
+            // Update Player
+            player.velocity += player.gravity;
+            player.y += player.velocity;
+
+            // Limit player to floor and ceiling
+            if (player.y + player.radius > floorY) {
+                player.y = floorY - player.radius;
+                player.velocity = 0;
+            } else if (player.y - player.radius < ceilingY) {
+                player.y = ceilingY + player.radius;
+                player.velocity = 0;
+            }
+
+            // Trail effect
+            player.trail.push({x: player.x, y: player.y});
+            if (player.trail.length > 15) player.trail.shift();
+
+            // Update Obstacles & Collision
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= gameSpeed;
+
+                // Logic cho chướng ngại vật di chuyển lên xuống (Type 1)
+                if (obs.type === 1) {
+                    obs.y = obs.startY + Math.sin(frameCount * obs.moveSpeed + obs.moveOffset) * obs.moveRange;
+                    // Giữ cho vật cản không bao giờ lọt ra ngoài trần hoặc sàn
+                    if (obs.y < ceilingY) obs.y = ceilingY;
+                    if (obs.y + obs.height > floorY) obs.y = floorY - obs.height;
+                }
+
+                // Collision detection (Circle vs AABB)
+                let testX = player.x;
+                let testY = player.y;
+
+                if (player.x < obs.x) testX = obs.x;
+                else if (player.x > obs.x + obs.width) testX = obs.x + obs.width;
+
+                if (player.y < obs.y) testY = obs.y;
+                else if (player.y > obs.y + obs.height) testY = obs.y + obs.height;
+
+                let distX = player.x - testX;
+                let distY = player.y - testY;
+                let distance = Math.sqrt((distX*distX) + (distY*distY));
+
+                if (distance <= player.radius) {
+                    gameOver();
+                }
+
+                // Score logic
+                if (!obs.passed && obs.x + obs.width < player.x) {
+                    obs.passed = true;
+                    score++;
+                    scoreDisplay.innerText = score;
+                    playScoreSound(); // Phát âm thanh ghi điểm
+                    
+                    // Mild pulse effect on score
+                    scoreDisplay.style.transform = 'scale(1.3)';
+                    setTimeout(() => scoreDisplay.style.transform = 'scale(1)', 100);
+                }
+
+                // Remove off-screen obstacles
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Update Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            // Clear canvas with slight trailing effect for motion blur
+            ctx.fillStyle = 'rgba(5, 5, 16, 0.4)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Stars (Bầu trời sao)
+            ctx.fillStyle = '#ffffff';
+            for (let star of stars) {
+                if (gameState === 'PLAYING') {
+                    // Sao bay ngược chiều tạo cảm giác nhân vật đang tiến lên
+                    star.x -= star.speed * (gameSpeed * 0.5);
+                    if (star.x < 0) {
+                        star.x = width;
+                        star.y = Math.random() * height;
+                    }
+                }
+                // Các ngôi sao xa hơn (tốc độ bay chậm) sẽ mờ hơn
+                ctx.globalAlpha = star.speed + 0.2; 
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // Draw Clouds (Đám mây dưới cùng)
+            ctx.fillStyle = '#00ffff'; // Màu cyan nhẹ tone sur tone với nhân vật
+            for (let cloud of clouds) {
+                if (gameState === 'PLAYING') {
+                    // Mây chạy TỪ PHẢI QUA TRÁI lững lờ êm ái
+                    cloud.x -= gameSpeed * cloud.speed;
+                    
+                    // Nếu mây trôi khuất khỏi màn hình bên trái, cho xuất hiện lại ngay bên phải
+                    if (cloud.x + cloud.size * 4 < 0) {
+                        cloud.x = width + cloud.size;
+                        cloud.y = floorY + 15 + Math.random() * 40;
+                    }
+                }
+                
+                ctx.globalAlpha = cloud.opacity;
+                ctx.beginPath();
+                // Vẽ hình dáng đám mây dày dặn và rõ nét hơn
+                ctx.arc(cloud.x, cloud.y, cloud.size * 0.7, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size, cloud.y - cloud.size * 0.4, cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size * 2, cloud.y, cloud.size * 0.8, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size * 2.8, cloud.y + cloud.size * 0.2, cloud.size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // Draw Ceiling and Floor lines
+            ctx.strokeStyle = colors.line;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, ceilingY);
+            ctx.lineTo(width, ceilingY);
+            ctx.moveTo(0, floorY);
+            ctx.lineTo(width, floorY);
+            ctx.stroke();
+
+            if (gameState === 'PLAYING') {
+                // Draw Player Trail
+                ctx.beginPath();
+                for (let i = 0; i < player.trail.length; i++) {
+                    const point = player.trail[i];
+                    const size = (i / player.trail.length) * player.radius;
+                    ctx.globalAlpha = i / player.trail.length * 0.5;
+                    ctx.fillStyle = player.color;
+                    ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath(); // reset for next circle
+                }
+                ctx.globalAlpha = 1;
+
+                // Draw Player
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = player.color;
+                ctx.fillStyle = player.color;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0; // reset
+            }
+
+            // Draw Obstacles
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = colors.obstacle;
+            ctx.fillStyle = colors.obstacle;
+            for (let obs of obstacles) {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            }
+            ctx.shadowBlur = 0;
+
+            // Draw Particles
+            for (let p of particles) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+        }
+
+        function animate() {
+            if (gameState === 'PLAYING') {
+                update();
+                draw();
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Initial draw for background
+        draw();
+
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+```

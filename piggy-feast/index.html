@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Piggy Feast</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
+        
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #050510;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            touch-action: none; -webkit-user-select: none; user-select: none;
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+
+        .ui-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; z-index: 20; pointer-events: none;
+        }
+
+        .menu-card {
+            background: rgba(25, 15, 25, 0.9);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(236, 72, 153, 0.3);
+            pointer-events: auto;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .btn-pig {
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            box-shadow: 0 4px 0 #9d174d, 0 10px 20px -5px rgba(236, 72, 153, 0.4);
+            transition: all 0.1s;
+        }
+
+        .btn-pig:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #9d174d;
+        }
+
+        .hud-text {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #level-up-msg {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 4rem; font-weight: 900; color: #fbbf24;
+            opacity: 0; pointer-events: none; z-index: 30;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+        }
+
+        .animate-level-up {
+            animation: levelUpPop 1.5s ease-out forwards;
+        }
+
+        @keyframes levelUpPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="level-up-msg">LEVEL UP!</div>
+
+    <div id="hud" class="absolute top-0 left-0 w-full p-4 flex justify-between items-start pointer-events-none z-10 hidden">
+        <div class="flex flex-col">
+            <div class="flex items-baseline gap-2">
+                <span id="score-val" class="text-3xl font-extrabold text-pink-500 hud-text">Score: 6</span>
+                <span id="level-val" class="text-sm font-bold text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">LVL 1</span>
+            </div>
+            <span id="high-score-val" class="text-xs font-bold text-stone-400 tracking-widest uppercase mt-1">Best: 0</span>
+        </div>
+        <button id="pause-btn" class="pointer-events-auto bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-md transition-colors">
+            <div id="pause-icon" class="w-5 h-5 flex justify-between">
+                <div class="w-1.5 h-full bg-white rounded-full"></div>
+                <div class="w-1.5 h-full bg-white rounded-full"></div>
+            </div>
+        </button>
+    </div>
+
+    <div id="start-screen" class="ui-screen">
+        <div class="menu-card p-8 rounded-[32px] w-80 text-center">
+            <div class="w-20 h-20 bg-pink-500 rounded-3xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-xl shadow-pink-900/40">🐷</div>
+            <h1 class="text-3xl font-extrabold text-white mb-2 tracking-tight">PIGGY FEAST</h1>
+            <p class="text-stone-400 text-sm mb-8 leading-relaxed">Eat all food! Missed items cost 1 point. Reach 0 and it's Game Over!</p>
+            
+            <button id="play-btn" class="btn-pig w-full py-4 text-white font-bold text-xl rounded-2xl mb-4">START FEAST</button>
+            
+            <div class="flex gap-2 justify-center mt-2">
+                <button id="mute-btn" class="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-xl">🔊</button>
+                <button class="flex-1 bg-stone-800 text-stone-400 text-xs font-bold rounded-xl flex items-center justify-center hover:text-white transition-colors">PRIVACY</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="death-screen" class="ui-screen hidden">
+        <div class="menu-card p-8 rounded-[32px] w-80 text-center">
+            <h2 class="text-2xl font-extrabold text-red-500 mb-2">OUT OF ENERGY...</h2>
+            <div class="bg-white/5 rounded-2xl p-4 mb-6">
+                <p class="text-stone-400 text-xs uppercase font-bold tracking-widest mb-1">Final Score</p>
+                <p id="final-score" class="text-4xl font-black text-white">0</p>
+            </div>
+            <button id="restart-btn" class="btn-pig w-full py-4 text-white font-bold text-xl rounded-2xl">RETRY</button>
+            <button onclick="location.reload()" class="mt-4 text-stone-500 text-sm font-bold hover:text-white transition-colors">MAIN MENU</button>
+        </div>
+    </div>
+
+    <div id="victory-screen" class="ui-screen hidden">
+        <div class="menu-card p-8 rounded-[32px] w-80 text-center border-yellow-500">
+            <div class="text-5xl mb-4">👑</div>
+            <h2 class="text-2xl font-extrabold text-yellow-500 mb-2">FOOD KING!</h2>
+            <p class="text-stone-300 text-sm mb-6">You reached 3000 points!</p>
+            <button id="victory-restart-btn" class="btn-pig w-full py-4 text-white font-bold text-xl rounded-2xl">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const hud = document.getElementById('hud');
+        const levelUpMsg = document.getElementById('level-up-msg');
+        
+        let gameState = 'MENU';
+        let score = 6;
+        let level = 1;
+        let highScore = localStorage.getItem('pig_high_score') || 0;
+        let isMuted = false;
+        let lastTime = performance.now();
+        let spawnTimer = 0;
+
+        const scoreVal = document.getElementById('score-val');
+        const levelVal = document.getElementById('level-val');
+        const highScoreVal = document.getElementById('high-score-val');
+        const startScreen = document.getElementById('start-screen');
+        const deathScreen = document.getElementById('death-screen');
+        const victoryScreen = document.getElementById('victory-screen');
+        
+        highScoreVal.innerText = `Best: ${highScore}`;
+
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (isMuted || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'jump') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(350, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'eat') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'levelup') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        class ShootingStar {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width * 1.5;
+                this.y = -50;
+                this.speed = Math.random() * 8 + 7;
+                this.len = Math.random() * 100 + 50;
+                this.active = false;
+                this.waitTimer = Math.random() * 300; 
+            }
+            update() {
+                if (!this.active) {
+                    this.waitTimer--;
+                    if (this.waitTimer <= 0) this.active = true;
+                    return;
+                }
+                this.x -= this.speed;
+                this.y += this.speed * 0.4; 
+                if (this.x < -this.len || this.y > canvas.height + this.len) {
+                    this.reset();
+                }
+            }
+            draw() {
+                if (!this.active) return;
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.len, this.y - this.len * 0.4);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        class Pig {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = 80; this.y = canvas.height / 2;
+                this.radius = 22; this.velocity = 0;
+                this.gravity = 0.5; this.lift = -8;
+                this.rotation = 0;
+            }
+            jump() { this.velocity = this.lift; playSound('jump'); }
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                this.rotation = Math.min(Math.PI/8, Math.max(-Math.PI/8, this.velocity * 0.03));
+
+                if (this.y + this.radius > canvas.height) endGame();
+                if (this.y - this.radius < 0) { this.y = this.radius; this.velocity = 0; }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = '#f472b6';
+                ctx.beginPath(); ctx.ellipse(0, 0, 24, 20, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ec4899';
+                ctx.beginPath(); ctx.ellipse(18, 2, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#9d174d'; 
+                ctx.beginPath(); ctx.arc(16, 2, 1.5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(20, 2, 1.5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(10, -5, 2.5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#f472b6';
+                ctx.beginPath(); ctx.moveTo(-5, -15); ctx.lineTo(2, -25); ctx.lineTo(10, -15); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(-12, -12); ctx.lineTo(-18, -22); ctx.lineTo(-5, -12); ctx.fill();
+                ctx.strokeStyle = '#ec4899'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(-24, 0); ctx.quadraticCurveTo(-30, -10, -25, -15); ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        class Food {
+            constructor() {
+                const types = ['APPLE', 'BURGER', 'PIZZA'];
+                this.type = types[Math.floor(Math.random() * types.length)];
+                this.radius = 16;
+                this.x = canvas.width + 50;
+                this.y = Math.random() * (canvas.height - 100) + 50;
+                this.speed = (Math.random() * 2 + 3) + (level * 0.5);
+                this.dy = (Math.random() - 0.5) * 2;
+                this.angle = 0;
+            }
+            update() {
+                this.x -= this.speed;
+                this.y += this.dy;
+                if (this.y < 50 || this.y > canvas.height - 50) this.dy *= -1;
+                this.angle += 0.05;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                if (this.type === 'APPLE') {
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, 2, 12, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#22c55e'; ctx.fillRect(-2, -14, 4, 6);
+                } else if (this.type === 'BURGER') {
+                    ctx.fillStyle = '#fcd34d'; ctx.beginPath(); ctx.arc(0, 0, 14, Math.PI, 0); ctx.fill(); 
+                    ctx.fillStyle = '#92400e'; ctx.fillRect(-14, 0, 28, 4); 
+                    ctx.fillStyle = '#fcd34d'; ctx.fillRect(-14, 4, 28, 6); 
+                } else if (this.type === 'PIZZA') {
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(12, 12); ctx.lineTo(-12, 12); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(2, 2, 2, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(-3, 6, 2, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        let stars = [];
+        for(let i=0; i<80; i++) stars.push({x: Math.random()*2000, y: Math.random()*2000, s: Math.random()*2});
+        let shootingStars = [];
+        for(let i=0; i<3; i++) shootingStars.push(new ShootingStar());
+
+        const pig = new Pig();
+        let entities = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function spawn() {
+            spawnTimer++;
+            let baseRate = 50;
+            let currentRate = Math.max(15, baseRate - (level * 4));
+            if (spawnTimer > currentRate) {
+                spawnTimer = 0;
+                entities.push(new Food());
+            }
+        }
+
+        function update(dt) {
+            shootingStars.forEach(s => s.update());
+            if (gameState !== 'PLAYING') return;
+
+            pig.update();
+            spawn();
+
+            let nextLevel = Math.floor(score / 50) + 1;
+            if (nextLevel > level) {
+                level = nextLevel;
+                levelVal.innerText = `LVL ${level}`;
+                playSound('levelup');
+                levelUpMsg.classList.remove('animate-level-up');
+                void levelUpMsg.offsetWidth; 
+                levelUpMsg.classList.add('animate-level-up');
+            }
+
+            entities.forEach((e, i) => {
+                e.update();
+                const dist = Math.hypot(pig.x - e.x, pig.y - e.y);
+                if (dist < pig.radius + e.radius - 5) {
+                    score++; playSound('eat'); entities.splice(i, 1);
+                } 
+                else if (e.x < -20) {
+                    score--; entities.splice(i, 1);
+                }
+                if (score <= 0) endGame();
+            });
+
+            if (score >= 3000) { gameState = 'VICTORY'; victoryScreen.classList.remove('hidden'); }
+            scoreVal.innerText = `Score: ${score}`;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            stars.forEach(s => {
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath(); ctx.arc(s.x % canvas.width, s.y % canvas.height, s.s, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            shootingStars.forEach(s => s.draw());
+            ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(canvas.width-80, 80, 35, 0, Math.PI*2); ctx.fill();
+
+            if (gameState !== 'MENU') {
+                entities.forEach(e => e.draw());
+                pig.draw();
+            }
+        }
+
+        function gameLoop(time) {
+            update(time - lastTime);
+            lastTime = time; draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            initAudio(); score = 6; level = 1; entities = []; pig.reset();
+            levelVal.innerText = `LVL 1`;
+            gameState = 'PLAYING';
+            startScreen.classList.add('hidden'); deathScreen.classList.add('hidden'); victoryScreen.classList.add('hidden'); hud.classList.remove('hidden');
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER'; hud.classList.add('hidden'); deathScreen.classList.remove('hidden');
+            document.getElementById('final-score').innerText = Math.max(0, score);
+            if (score > highScore) {
+                highScore = score; localStorage.setItem('pig_high_score', highScore);
+                highScoreVal.innerText = `Best: ${highScore}`;
+            }
+        }
+
+        const inputAction = (e) => {
+            if (e.target.closest('button')) return;
+            if (gameState === 'PLAYING') pig.jump();
+        };
+
+        window.addEventListener('mousedown', inputAction);
+        window.addEventListener('touchstart', (e) => inputAction(e), {passive: true});
+        document.getElementById('play-btn').onclick = startGame;
+        document.getElementById('restart-btn').onclick = startGame;
+        document.getElementById('victory-restart-btn').onclick = startGame;
+        document.getElementById('mute-btn').onclick = (e) => {
+            isMuted = !isMuted; e.target.innerText = isMuted ? '🔇' : '🔊'; initAudio();
+        };
+        document.getElementById('pause-btn').onclick = () => {
+            if (gameState === 'PLAYING') gameState = 'PAUSED';
+            else if (gameState === 'PAUSED') gameState = 'PLAYING';
+        };
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
