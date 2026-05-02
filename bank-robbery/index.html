@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bank Robbery</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            width: 100vw;
+            height: 100vh;
+            max-width: 800px; 
+            max-height: 1000px;
+            background-color: #222;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #start-screen, #game-over-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        h1 {
+            color: #ffd700;
+            text-shadow: 2px 2px 4px #000;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 2rem;
+        }
+
+        p {
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 0 15px;
+            color: #ddd;
+        }
+
+        button {
+            pointer-events: auto;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #111;
+            background-color: #ffd700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* --- STYLES CHO NÚT BẤM CỤC TIỀN --- */
+        .money-btn {
+            background-color: #2ecc71;
+            border: 4px solid #27ae60;
+            border-radius: 12px;
+            padding: 20px 60px;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 
+                -3px 3px 0 #1e8449,
+                -6px 6px 0 #196f3d,
+                -9px 9px 0 #145a32,
+                -12px 15px 20px rgba(0,0,0,0.7);
+            transition: transform 0.1s, box-shadow 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            outline: none;
+            margin-top: 15px;
+        }
+        
+        .money-btn:hover {
+            transform: translate(2px, -2px);
+            box-shadow: 
+                -4px 4px 0 #1e8449,
+                -8px 8px 0 #196f3d,
+                -12px 12px 0 #145a32,
+                -15px 20px 25px rgba(0,0,0,0.7);
+            background-color: #2fd676;
+        }
+
+        .money-btn:active {
+            transform: translate(-9px, 9px) !important;
+            box-shadow: 
+                0px 0px 0 #1e8449,
+                0px 0px 0 #196f3d,
+                0px 0px 0 #145a32,
+                0px 5px 10px rgba(0,0,0,0.7) !important;
+        }
+
+        .money-btn .band {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            background-color: #ecf0f1;
+            border-left: 3px dashed #bdc3c7;
+            border-right: 3px dashed #bdc3c7;
+            z-index: 1;
+        }
+
+        .money-btn .dollar {
+            font-size: 3.5rem;
+            color: #fff;
+            font-weight: 900;
+            z-index: 2;
+            text-shadow: 3px 3px 0px #27ae60;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .money-btn .start-text {
+            font-size: 1.5rem;
+            color: #fff;
+            font-weight: 900;
+            z-index: 2;
+            text-shadow: 2px 2px 0px #27ae60;
+            letter-spacing: 2px;
+        }
+
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 2px #000;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        #health-bar-container {
+            width: 150px;
+            height: 15px;
+            background-color: #333;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+
+        #health-bar {
+            width: 100%;
+            height: 100%;
+            background-color: #2ecc71;
+            transition: width 0.2s, background-color 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="hud">
+            <div style="display: flex; gap: 15px;">
+                <div class="hud-text">
+                    HP: <div id="health-bar-container"><div id="health-bar"></div></div>
+                </div>
+                <div class="hud-text" style="color: #2ecc71;">
+                    Cash: $<span id="score">0</span>
+                </div>
+            </div>
+            <button id="mute-btn" style="pointer-events: auto; padding: 5px 15px; font-size: 1.2rem; background: rgba(0,0,0,0.6); border: 2px solid #fff; color: white; border-radius: 5px; cursor: pointer;">🔊</button>
+        </div>
+
+        <div id="ui-layer">
+            <div id="start-screen">
+                <h1>BANK ROBBERY</h1>
+                <p>Explore the City, Parks, and Beaches! Drive around, dodge traffic, escape the police, and collect money.</p>
+                <p style="color: #2ecc71;"><b>Move:</b> WASD / Arrows or Touch & Drag.<br><b>Note:</b> Pick up 💣 BOMBS to blow up all police cars!</p>
+                
+                <button id="start-btn" class="money-btn">
+                    <div class="band"></div>
+                    <div class="dollar">$</div>
+                    <div class="start-text">START</div>
+                </button>
+            </div>
+            <div id="game-over-screen" class="hidden">
+                <h1 style="color: #e74c3c;">BUSTED!</h1>
+                <p>Survival Time: <span id="survival-time" style="color: #fff;">0s</span></p>
+                <p>High Score: <span id="high-score-display" style="color: #ffd700; font-weight: bold;">$0</span></p>
+                <p>Total Loot: <span id="final-score" style="color: #2ecc71; font-weight: bold; font-size: 1.5rem;">$0</span></p>
+                <button id="restart-btn">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('game-container');
+        
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const uiLayer = document.getElementById('ui-layer');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('final-score');
+        const survivalTimeElement = document.getElementById('survival-time');
+        const healthBar = document.getElementById('health-bar');
+        const muteBtn = document.getElementById('mute-btn');
+        const highScoreDisplay = document.getElementById('high-score-display');
+
+        // Lấy điểm cao đã lưu
+        let storedHighScore = localStorage.getItem('bankRobberyHighScore') || 0;
+
+        // --- HỆ THỐNG ÂM THANH (WEB AUDIO API) ---
+        const AudioEngine = {
+            ctx: null,
+            sirenOsc: null, sirenGain: null, isSirenHigh: false,
+            engineOsc: null, engineGain: null, filter: null,
+            isMuted: false,
+            
+            toggleMute: function() {
+                this.isMuted = !this.isMuted;
+                muteBtn.innerText = this.isMuted ? '🔇' : '🔊';
+                if (this.isMuted && this.ctx) {
+                    this.sirenGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+                    this.engineGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+                }
+            },
+            
+            init: function() {
+                if(this.ctx) {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    return;
+                }
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                
+                this.sirenOsc = this.ctx.createOscillator();
+                this.sirenGain = this.ctx.createGain();
+                this.sirenOsc.type = 'square';
+                this.sirenGain.gain.value = 0;
+                this.sirenOsc.connect(this.sirenGain);
+                this.sirenGain.connect(this.ctx.destination);
+                this.sirenOsc.start();
+                
+                setInterval(() => {
+                    if(!this.ctx || this.sirenGain.gain.value < 0.001) return;
+                    this.isSirenHigh = !this.isSirenHigh;
+                    this.sirenOsc.frequency.setValueAtTime(this.isSirenHigh ? 800 : 600, this.ctx.currentTime);
+                }, 400);
+
+                this.engineOsc = this.ctx.createOscillator();
+                this.engineGain = this.ctx.createGain();
+                this.engineOsc.type = 'sawtooth';
+                this.engineGain.gain.value = 0;
+                
+                this.filter = this.ctx.createBiquadFilter();
+                this.filter.type = 'lowpass';
+                this.filter.frequency.value = 100;
+                
+                this.engineOsc.connect(this.filter);
+                this.filter.connect(this.engineGain);
+                this.engineGain.connect(this.ctx.destination);
+                this.engineOsc.start();
+            },
+            
+            playShoot: function() {
+                if(!this.ctx || this.isMuted) return;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+            },
+            
+            playCoin: function() {
+                if(!this.ctx || this.isMuted) return;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(1200, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+            },
+
+            playExplosion: function() {
+                if(!this.ctx || this.isMuted) return;
+                let bufferSize = this.ctx.sampleRate * 0.4;
+                let buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                let data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                
+                let noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                let filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(600, this.ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.4);
+                
+                let gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+                
+                noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+                noise.start();
+            },
+
+            playHit: function() {
+                if(!this.ctx || this.isMuted) return;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.15);
+            },
+
+            updateLoop: function(isRunning, enemyCount, isMoving) {
+                if(!this.ctx) return;
+                if (isRunning && !this.isMuted) {
+                    let targetSiren = enemyCount > 0 ? Math.min(0.01 + (enemyCount * 0.005), 0.06) : 0;
+                    this.sirenGain.gain.setTargetAtTime(targetSiren, this.ctx.currentTime, 0.5);
+                    this.engineGain.gain.setTargetAtTime(0.15, this.ctx.currentTime, 0.5);
+                    this.engineOsc.frequency.setTargetAtTime(isMoving ? 70 : 35, this.ctx.currentTime, 0.2);
+                    this.filter.frequency.setTargetAtTime(isMoving ? 200 : 100, this.ctx.currentTime, 0.2);
+                } else {
+                    this.sirenGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+                    this.engineGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+                }
+            }
+        };
+
+        // Gán sự kiện nút Tắt/Bật âm
+        muteBtn.addEventListener('click', () => AudioEngine.toggleMute());
+
+        let isGameRunning = false;
+        let score = 0;
+        let frameCount = 0;
+        let camera = { x: 0, y: 0 };
+        
+        const ZOOM = 0.6; // Biến Zoom Camera (0.6 = tầm nhìn rộng ra thêm 40%)
+        const BLOCK_SIZE = 600;
+        const ROAD_WIDTH = 200;
+        const SIDEWALK_WIDTH = 30;
+        const BUILD_MIN = ROAD_WIDTH / 2 + SIDEWALK_WIDTH;
+        const BUILD_MAX = BLOCK_SIZE - ROAD_WIDTH / 2 - SIDEWALK_WIDTH;
+
+        let player;
+        let enemies = [];
+        let civilianCars = []; // Xe của dân thường
+        let bullets = [];
+        let moneys = [];
+        let bombs = []; // Mảng chứa các quả bom
+        let powerUps = []; // Mảng chứa vật phẩm Súng Máy
+        let particles = [];
+        let pedestrians = [];
+
+        const keys = { a: false, d: false, w: false, s: false, ArrowLeft: false, ArrowRight: false, ArrowUp: false, ArrowDown: false };
+        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        let isDragging = false;
+        let joyStart = { x: 0, y: 0 };
+        let joyCurrent = { x: 0, y: 0 };
+
+        function getTouchPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+        }
+
+        canvas.addEventListener('touchstart', e => {
+            if (!isGameRunning) return;
+            isDragging = true; joyStart = getTouchPos(e); joyCurrent = joyStart; e.preventDefault();
+        }, { passive: false });
+        canvas.addEventListener('touchmove', e => {
+            if (!isGameRunning || !isDragging) return;
+            joyCurrent = getTouchPos(e); e.preventDefault();
+        }, { passive: false });
+        canvas.addEventListener('touchend', e => { isDragging = false; e.preventDefault(); }, { passive: false });
+
+        function getDistance(a, b) {
+            return Math.hypot(a.worldX - b.worldX, a.worldY - b.worldY);
+        }
+
+        function hashBlock(c, r) {
+            let n = Math.sin(c * 12.9898 + r * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        }
+
+        function getBlockType(c, r) {
+            let h = hashBlock(c, r);
+            if (h < 0.60) return 'BUILDING'; 
+            if (h < 0.85) return 'PARK';     
+            return 'BEACH';                  
+        }
+
+        function handleEnvironmentCollision(entity) {
+            let c = Math.floor(entity.worldX / BLOCK_SIZE);
+            let r = Math.floor(entity.worldY / BLOCK_SIZE);
+
+            for (let dc = -1; dc <= 1; dc++) {
+                for (let dr = -1; dr <= 1; dr++) {
+                    let checkC = c + dc; let checkR = r + dr;
+                    let blockType = getBlockType(checkC, checkR);
+                    
+                    if (blockType === 'PARK') continue;
+
+                    let bMinX = checkC * BLOCK_SIZE + BUILD_MIN; let bMaxX = checkC * BLOCK_SIZE + BUILD_MAX;
+                    let bMinY = checkR * BLOCK_SIZE + BUILD_MIN; let bMaxY = checkR * BLOCK_SIZE + BUILD_MAX;
+
+                    let testX = entity.worldX; let testY = entity.worldY;
+                    if (entity.worldX < bMinX) testX = bMinX; else if (entity.worldX > bMaxX) testX = bMaxX;
+                    if (entity.worldY < bMinY) testY = bMinY; else if (entity.worldY > bMaxY) testY = bMaxY;
+
+                    let distX = entity.worldX - testX; let distY = entity.worldY - testY;
+                    let distance = Math.hypot(distX, distY);
+
+                    if (distance < entity.radius) {
+                        if (entity instanceof Bullet) { entity.life = 0; return; }
+                        if (distance === 0) {
+                            let dLeft = entity.worldX - bMinX; let dRight = bMaxX - entity.worldX;
+                            let dTop = entity.worldY - bMinY; let dBottom = bMaxY - entity.worldY;
+                            let minD = Math.min(dLeft, dRight, dTop, dBottom);
+                            if (minD === dLeft) entity.worldX = bMinX - entity.radius;
+                            else if (minD === dRight) entity.worldX = bMaxX + entity.radius;
+                            else if (minD === dTop) entity.worldY = bMinY - entity.radius;
+                            else if (minD === dBottom) entity.worldY = bMaxY + entity.radius;
+                        } else {
+                            let pen = entity.radius - distance;
+                            entity.worldX += (distX / distance) * pen;
+                            entity.worldY += (distY / distance) * pen;
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- CLASSES ---
+        class Player {
+            constructor() {
+                this.worldX = 0; this.worldY = 0;
+                this.w = 34; this.h = 66; this.radius = 22;
+                this.speed = 5.5; 
+                this.angle = -Math.PI / 2;
+                this.maxHealth = 100; this.health = 100;
+                this.fireCooldown = 0; this.fireRate = 12;
+                this.machineGunTimer = 0; // Thời gian hiệu lực súng máy
+            }
+
+            update() {
+                let dx = 0, dy = 0;
+                if (isDragging) {
+                    dx = joyCurrent.x - joyStart.x; dy = joyCurrent.y - joyStart.y;
+                } else {
+                    if (keys.ArrowLeft || keys.a) dx -= 1; if (keys.ArrowRight || keys.d) dx += 1;
+                    if (keys.ArrowUp || keys.w) dy -= 1; if (keys.ArrowDown || keys.s) dy += 1;
+                }
+
+                if (dx !== 0 || dy !== 0) {
+                    let dist = Math.hypot(dx, dy);
+                    if (!isDragging || dist > 10) {
+                        let dirX = dx / dist; let dirY = dy / dist;
+                        let c = Math.floor(this.worldX / BLOCK_SIZE); let r = Math.floor(this.worldY / BLOCK_SIZE);
+                        let currentSpeed = getBlockType(c, r) === 'PARK' ? this.speed * 0.8 : this.speed;
+
+                        this.worldX += dirX * currentSpeed; this.worldY += dirY * currentSpeed;
+                        this.angle = Math.atan2(dirY, dirX) + Math.PI / 2; 
+                    }
+                }
+
+                handleEnvironmentCollision(this);
+
+                if (this.machineGunTimer > 0) this.machineGunTimer--;
+
+                if (this.fireCooldown > 0) this.fireCooldown--;
+                if (this.fireCooldown <= 0 && enemies.length > 0) {
+                    let target = this.findNearestEnemy();
+                    if (target) {
+                        let shootAngle = Math.atan2(target.worldY - this.worldY, target.worldX - this.worldX);
+                        
+                        if (this.machineGunTimer > 0) {
+                            // Bắn 5 tia đạn màu xanh lan rộng
+                            for (let i = -2; i <= 2; i++) {
+                                bullets.push(new Bullet(this.worldX, this.worldY, shootAngle + i * 0.15, '#00ffff'));
+                            }
+                        } else {
+                            // Bắn đạn đơn bình thường
+                            bullets.push(new Bullet(this.worldX, this.worldY, shootAngle));
+                        }
+                        
+                        AudioEngine.playShoot();
+                        this.fireCooldown = this.fireRate;
+                    }
+                }
+            }
+
+            findNearestEnemy() {
+                let nearest = null; let minDist = 500;
+                for (let e of enemies) {
+                    let dist = getDistance(this, e);
+                    if (dist < minDist) { minDist = dist; nearest = e; }
+                }
+                return nearest;
+            }
+
+            draw() {
+                let screenX = this.worldX - camera.x; let screenY = this.worldY - camera.y;
+                ctx.save(); ctx.translate(screenX, screenY); ctx.rotate(this.angle);
+
+                let grad = ctx.createLinearGradient(0, -this.h/2, 0, -this.h/2 - 250);
+                grad.addColorStop(0, 'rgba(255, 255, 220, 0.3)'); grad.addColorStop(1, 'rgba(255, 255, 220, 0)');
+                ctx.fillStyle = grad; ctx.beginPath();
+                ctx.moveTo(-this.w/2 + 5, -this.h/2); ctx.lineTo(-this.w/2 - 60, -this.h/2 - 250);
+                ctx.lineTo(this.w/2 + 60, -this.h/2 - 250); ctx.lineTo(this.w/2 - 5, -this.h/2); ctx.fill();
+
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 4;
+                ctx.fillStyle = '#111';
+                ctx.fillRect(-this.w/2 - 2, -this.h/2 + 10, 4, 14); ctx.fillRect(this.w/2 - 2, -this.h/2 + 10, 4, 14);
+                ctx.fillRect(-this.w/2 - 2, this.h/2 - 20, 4, 14); ctx.fillRect(this.w/2 - 2, this.h/2 - 20, 4, 14);
+                
+                ctx.fillStyle = '#f39c12'; ctx.beginPath(); ctx.roundRect(-this.w/2, -this.h/2, this.w, this.h, 8); ctx.fill();
+                ctx.shadowColor = 'transparent';
+
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath(); ctx.moveTo(-this.w/2 + 4, -this.h/2 + 18); ctx.quadraticCurveTo(0, -this.h/2 + 10, this.w/2 - 4, -this.h/2 + 18);
+                ctx.lineTo(this.w/2 - 5, -this.h/2 + 28); ctx.lineTo(-this.w/2 + 5, -this.h/2 + 28); ctx.fill();
+                ctx.fillRect(-this.w/2 + 5, this.h/2 - 18, this.w - 10, 8);
+                
+                ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.roundRect(-this.w/2 + 6, -this.h/2 + 26, this.w - 12, this.h - 46, 4); ctx.fill();
+                ctx.fillStyle = '#111'; ctx.fillRect(-10, -5, 20, 8);
+                ctx.fillStyle = '#f1c40f'; ctx.font = 'bold 7px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('TAXI', 0, -1);
+                
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-this.w/2 + 8, -this.h/2 + 4, 3, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.w/2 - 8, -this.h/2 + 4, 3, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#c0392b'; ctx.fillRect(-this.w/2 + 4, this.h/2 - 3, 8, 3); ctx.fillRect(this.w/2 - 12, this.h/2 - 3, 8, 3);
+                ctx.restore();
+            }
+
+            takeDamage(amount) {
+                this.health -= amount; if (this.health <= 0) this.health = 0;
+                const pct = (this.health / this.maxHealth) * 100;
+                healthBar.style.width = pct + '%';
+                if (pct > 50) healthBar.style.backgroundColor = '#2ecc71';
+                else if (pct > 20) healthBar.style.backgroundColor = '#f1c40f';
+                else healthBar.style.backgroundColor = '#e74c3c';
+                container.style.boxShadow = 'inset 0 0 30px #e74c3c';
+                setTimeout(() => container.style.boxShadow = 'none', 100);
+                if (this.health === 0) endGame();
+            }
+        }
+
+        // --- XE DÂN THƯỜNG (Traffic Cars) ---
+        class CivilianCar {
+            constructor(x, y, dir, isVertical) {
+                this.worldX = x;
+                this.worldY = y;
+                this.w = 34;
+                this.h = 66;
+                this.radius = 22;
+                this.speed = Math.random() * 1.5 + 2.5; // Xe dân đi tà tà
+                this.hp = 2;
+                this.isVertical = isVertical;
+                this.dir = dir;
+                this.angle = isVertical ? (dir > 0 ? Math.PI : 0) : (dir > 0 ? Math.PI/2 : -Math.PI/2);
+                this.color = ['#3498db', '#e74c3c', '#9b59b6', '#bdc3c7', '#16a085', '#d35400', '#2ecc71'][Math.floor(Math.random() * 7)];
+            }
+
+            update() {
+                let lastX = this.worldX;
+                let lastY = this.worldY;
+
+                if (this.isVertical) this.worldY += this.speed * this.dir;
+                else this.worldX += this.speed * this.dir;
+
+                handleEnvironmentCollision(this);
+
+                // Nếu xe bị mắc kẹt (như đâm vào bãi biển) -> Quay đầu
+                if (Math.abs(this.worldX - lastX) < 0.1 && Math.abs(this.worldY - lastY) < 0.1) {
+                    this.dir *= -1;
+                    this.angle = this.isVertical ? (this.dir > 0 ? Math.PI : 0) : (this.dir > 0 ? Math.PI/2 : -Math.PI/2);
+                }
+            }
+
+            draw() {
+                let screenX = this.worldX - camera.x;
+                let screenY = this.worldY - camera.y;
+
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.rotate(this.angle);
+
+                // Bóng đổ
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 4;
+                ctx.fillStyle = '#111';
+                ctx.fillRect(-this.w/2 - 2, -this.h/2 + 10, 4, 14); ctx.fillRect(this.w/2 - 2, -this.h/2 + 10, 4, 14);
+                ctx.fillRect(-this.w/2 - 2, this.h/2 - 20, 4, 14); ctx.fillRect(this.w/2 - 2, this.h/2 - 20, 4, 14);
+
+                // Thân xe
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.roundRect(-this.w/2, -this.h/2, this.w, this.h, 8); ctx.fill();
+                ctx.shadowColor = 'transparent';
+
+                // Kính xe
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath(); ctx.moveTo(-this.w/2 + 4, -this.h/2 + 18); ctx.quadraticCurveTo(0, -this.h/2 + 10, this.w/2 - 4, -this.h/2 + 18);
+                ctx.lineTo(this.w/2 - 5, -this.h/2 + 28); ctx.lineTo(-this.w/2 + 5, -this.h/2 + 28); ctx.fill();
+                ctx.fillRect(-this.w/2 + 5, this.h/2 - 18, this.w - 10, 8);
+
+                // Đèn xe
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(-this.w/2 + 8, -this.h/2 + 4, 3, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.w/2 - 8, -this.h/2 + 4, 3, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#c0392b';
+                ctx.fillRect(-this.w/2 + 4, this.h/2 - 3, 8, 3); ctx.fillRect(this.w/2 - 12, this.h/2 - 3, 8, 3);
+
+                ctx.restore();
+            }
+        }
+
+        class Pedestrian {
+            constructor(x, y) {
+                this.worldX = x; this.worldY = y; this.radius = 6;
+                this.speed = Math.random() * 0.5 + 0.5; this.angle = Math.random() * Math.PI * 2;
+                this.color = ['#3498db', '#9b59b6', '#e67e22', '#ecf0f1', '#e74c3c'][Math.floor(Math.random() * 5)];
+            }
+            update() {
+                if (Math.random() < 0.05) this.angle += (Math.random() - 0.5) * Math.PI;
+                if (getDistance(this, player) < 250) {
+                    this.speed = 3; this.angle = Math.atan2(this.worldY - player.worldY, this.worldX - player.worldX);
+                } else { this.speed = Math.max(0.5, this.speed - 0.1); }
+                this.worldX += Math.cos(this.angle) * this.speed; this.worldY += Math.sin(this.angle) * this.speed;
+                handleEnvironmentCollision(this);
+            }
+            draw() {
+                let screenX = this.worldX - camera.x; let screenY = this.worldY - camera.y;
+                ctx.save(); ctx.translate(screenX, screenY); ctx.rotate(this.angle);
+                ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.arc(2, 2, this.radius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = this.color; ctx.beginPath(); ctx.roundRect(-4, -7, 8, 14, 4); ctx.fill();
+                ctx.fillStyle = '#f1c27d'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Enemy {
+            constructor(x, y) {
+                this.worldX = x; this.worldY = y;
+                this.w = 34; this.h = 68; this.radius = 22;
+                this.speed = Math.random() * 1.5 + 3.0; this.hp = 3; this.angle = 0;
+                
+                // Thêm biến phục vụ AI né tường
+                this.avoidTimer = 0;
+                this.avoidAngle = 0;
+            }
+            update() {
+                let lastX = this.worldX;
+                let lastY = this.worldY;
+                let angleToPlayer = Math.atan2(player.worldY - this.worldY, player.worldX - this.worldX);
+                
+                if (this.avoidTimer > 0) {
+                    // Trạng thái đang bẻ lái né tường
+                    this.avoidTimer--;
+                    this.worldX += Math.cos(this.avoidAngle) * this.speed; 
+                    this.worldY += Math.sin(this.avoidAngle) * this.speed;
+                    this.angle = this.avoidAngle + Math.PI / 2; // Đầu xe xoay theo hướng né
+                } else {
+                    // Trạng thái bình thường đuổi theo player
+                    this.worldX += Math.cos(angleToPlayer) * this.speed; 
+                    this.worldY += Math.sin(angleToPlayer) * this.speed;
+                    this.angle = angleToPlayer + Math.PI / 2;
+                }
+                
+                handleEnvironmentCollision(this);
+
+                // KIỂM TRA BỊ KẸT: Nếu di chuyển thực tế quá ngắn so với tốc độ
+                let actualDist = Math.hypot(this.worldX - lastX, this.worldY - lastY);
+                if (this.avoidTimer <= 0 && actualDist < this.speed * 0.3) {
+                    // Kích hoạt bẻ lái trong 20-50 khung hình
+                    this.avoidTimer = Math.floor(Math.random() * 30 + 20); 
+                    
+                    // Chọn ngẫu nhiên bẻ lái sang trái hoặc phải
+                    let turnDir = Math.random() > 0.5 ? 1 : -1;
+                    
+                    // Góc bẻ lái khoảng 70-110 độ so với hướng tới người chơi
+                    let turnAmount = (Math.PI / 2.5) + (Math.random() * Math.PI / 4);
+                    this.avoidAngle = angleToPlayer + turnAmount * turnDir;
+                }
+            }
+            draw() {
+                let screenX = this.worldX - camera.x; let screenY = this.worldY - camera.y;
+                ctx.save(); ctx.translate(screenX, screenY); ctx.rotate(this.angle);
+                
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 4;
+                ctx.fillStyle = '#111';
+                ctx.fillRect(-this.w/2 - 2, -this.h/2 + 10, 4, 14); ctx.fillRect(this.w/2 - 2, -this.h/2 + 10, 4, 14);
+                ctx.fillRect(-this.w/2 - 2, this.h/2 - 20, 4, 14); ctx.fillRect(this.w/2 - 2, this.h/2 - 20, 4, 14);
+
+                ctx.fillStyle = '#ecf0f1'; ctx.beginPath(); ctx.roundRect(-this.w/2, -this.h/2, this.w, this.h, 8); ctx.fill();
+                ctx.shadowColor = 'transparent';
+
+                ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect(-this.w/2, -this.h/2, this.w, this.h/3, {tl: 8, tr: 8, bl: 0, br: 0}); ctx.fill();
+                ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-this.w/2 + 4, -this.h/2 - 3, this.w - 8, 4);
+
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath(); ctx.moveTo(-this.w/2 + 4, -this.h/2 + 20); ctx.quadraticCurveTo(0, -this.h/2 + 12, this.w/2 - 4, -this.h/2 + 20);
+                ctx.lineTo(this.w/2 - 5, -this.h/2 + 30); ctx.lineTo(-this.w/2 + 5, -this.h/2 + 30); ctx.fill();
+                ctx.fillRect(-this.w/2 + 5, this.h/2 - 18, this.w - 10, 8);
+
+                ctx.fillStyle = '#111'; ctx.font = 'bold 8px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('POLICE', 0, 5);
+                
+                let isRed = Math.floor(Date.now() / 150) % 2 === 0;
+                ctx.fillStyle = '#333'; ctx.fillRect(-12, -8, 24, 5);
+                ctx.fillStyle = isRed ? '#ff0000' : '#0000ff'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 15; ctx.fillRect(-11, -7, 10, 3);
+                ctx.fillStyle = isRed ? '#0000ff' : '#ff0000'; ctx.shadowColor = ctx.fillStyle; ctx.fillRect(1, -7, 10, 3); ctx.shadowBlur = 0;
+                ctx.restore();
+            }
+        }
+
+        class Bullet {
+            constructor(x, y, angle, color = '#f1c40f') {
+                this.worldX = x; this.worldY = y;
+                this.angle = angle; this.speed = 15; this.radius = 5; this.life = 60;
+                this.color = color;
+            }
+            update() {
+                this.worldX += Math.cos(this.angle) * this.speed; this.worldY += Math.sin(this.angle) * this.speed;
+                this.life--; handleEnvironmentCollision(this);
+            }
+            draw() {
+                let screenX = this.worldX - camera.x; let screenY = this.worldY - camera.y;
+                ctx.save();
+                if (this.color === '#00ffff') {
+                    ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10;
+                }
+                ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(screenX, screenY, this.radius, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class MachineGunItem {
+            constructor(x, y) {
+                this.worldX = x + (Math.random() * 30 - 15); this.worldY = y + (Math.random() * 30 - 15);
+                this.radius = 15; this.life = 600;
+            }
+            update() { this.life--; }
+            draw() {
+                let screenX = this.worldX - camera.x; let screenY = this.worldY - camera.y;
+                ctx.save(); ctx.translate(screenX, screenY);
+                ctx.globalAlpha = this.life < 50 ? (this.life % 10 > 5 ? 1 : 0) : 1;
+                ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 15;
+                ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.roundRect(-12, -12, 24, 24, 4); ctx.fill();
+                ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#00ffff'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('MG', 0, 1);
+                ctx.restore();
+            }
+        }
+
+        class Money {
+            constructor(x, y) {
+                this.worldX = x + (Math.random() * 30 - 15); this.worldY = y + (Math.random() * 30 - 15);
+                this.radius = 12; this.value = Math.floor(Math.random() * 5 + 1) * 10; this.life = 500;
+            }
+            update() { this.life--; }
+            draw() {
+                let screenX = this.worldX - camera.x; let screenY = this.worldY - camera.y;
+                ctx.save(); ctx.translate(screenX, screenY);
+                ctx.globalAlpha = this.life < 50 ? (this.life % 10 > 5 ? 1 : 0) : 1;
+                ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+                ctx.fillStyle = '#1e5f35'; ctx.beginPath(); ctx.roundRect(-12, -8, 24, 16, 2); ctx.fill();
+                ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('$', 0, 1);
+                ctx.restore();
+            }
+        }
+
+        class Bomb {
+            constructor(x, y) {
+                this.worldX = x + (Math.random() * 30 - 15); this.worldY = y + (Math.random() * 30 - 15);
+                this.radius = 15; this.life = 600;
+            }
+            update() { this.life--; }
+            draw() {
+                let screenX = this.worldX - camera.x; let screenY = this.worldY - camera.y;
+                ctx.save(); ctx.translate(screenX, screenY);
+                ctx.globalAlpha = this.life < 50 ? (this.life % 10 > 5 ? 1 : 0) : 1;
+                
+                // Hiệu ứng phát sáng màu đỏ nhấp nháy để dễ nhìn trên đường đen
+                let isFlashing = Math.floor(Date.now() / 150) % 2 === 0;
+                ctx.shadowColor = isFlashing ? '#ff0000' : 'rgba(255, 0, 0, 0.4)'; 
+                ctx.shadowBlur = isFlashing ? 25 : 10;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                
+                // Quả bom đen
+                ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill();
+                
+                // Tắt shadow để vẽ ngòi nổ không bị lem
+                ctx.shadowBlur = 0;
+
+                // Ngòi nổ đỏ
+                ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(0, -this.radius + 4, 5, 0, Math.PI*2); ctx.fill();
+                // Chớp sáng trên quả bom
+                ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.arc(-4, -4, 4, 0, Math.PI*2); ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.worldX = x; this.worldY = y; this.size = Math.random() * 6 + 2;
+                this.speedX = Math.random() * 8 - 4; this.speedY = Math.random() * 8 - 4;
+                this.color = color; this.life = 1.0; this.decay = Math.random() * 0.05 + 0.02;
+            }
+            update() {
+                this.worldX += this.speedX; this.worldY += this.speedY;
+                this.life -= this.decay; this.size += 0.1;
+            }
+            draw() {
+                ctx.save(); ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.worldX - camera.x, this.worldY - camera.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            }
+        }
+
+        function createExplosion(x, y) {
+            AudioEngine.playExplosion();
+            const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#555'];
+            for (let i = 0; i < 25; i++) particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
+        }
+
+        function triggerNuke() {
+            AudioEngine.playExplosion();
+            // Hiệu ứng chớp sáng toàn màn hình
+            container.style.backgroundColor = '#fff';
+            setTimeout(() => container.style.backgroundColor = '#222', 150);
+
+            // Tiêu diệt toàn bộ cảnh sát
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                let e = enemies[j];
+                const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#555'];
+                for (let k = 0; k < 25; k++) particles.push(new Particle(e.worldX, e.worldY, colors[Math.floor(Math.random() * colors.length)]));
+                
+                let rand = Math.random();
+                if (rand > 0.9) powerUps.push(new MachineGunItem(e.worldX, e.worldY));
+                else if (rand > 0.2) moneys.push(new Money(e.worldX, e.worldY));
+                score += 10;
+            }
+            enemies = []; // Xóa sổ mảng cảnh sát
+            scoreElement.innerText = score;
+        }
+
+        function drawCity() {
+            ctx.fillStyle = '#1a1a1c';
+            ctx.fillRect(0, 0, canvas.width / ZOOM, canvas.height / ZOOM);
+
+            let startCol = Math.floor(camera.x / BLOCK_SIZE) - 1;
+            let startRow = Math.floor(camera.y / BLOCK_SIZE) - 1;
+            let endCol = startCol + Math.ceil((canvas.width / ZOOM) / BLOCK_SIZE) + 2;
+            let endRow = startRow + Math.ceil((canvas.height / ZOOM) / BLOCK_SIZE) + 2;
+            
+            for(let c = startCol; c <= endCol; c++) {
+                for(let r = startRow; r <= endRow; r++) {
+                    let worldX = c * BLOCK_SIZE; let worldY = r * BLOCK_SIZE;
+                    let screenX = worldX - camera.x; let screenY = worldY - camera.y;
+                    let blockType = getBlockType(c, r);
+
+                    ctx.strokeStyle = '#e67e22'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(screenX - 2, screenY + ROAD_WIDTH/2); ctx.lineTo(screenX - 2, screenY + BLOCK_SIZE - ROAD_WIDTH/2);
+                    ctx.moveTo(screenX + 2, screenY + ROAD_WIDTH/2); ctx.lineTo(screenX + 2, screenY + BLOCK_SIZE - ROAD_WIDTH/2); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(screenX + ROAD_WIDTH/2, screenY - 2); ctx.lineTo(screenX + BLOCK_SIZE - ROAD_WIDTH/2, screenY - 2);
+                    ctx.moveTo(screenX + ROAD_WIDTH/2, screenY + 2); ctx.lineTo(screenX + BLOCK_SIZE - ROAD_WIDTH/2, screenY + 2); ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; ctx.lineWidth = 2; ctx.setLineDash([15, 15]);
+                    ctx.beginPath(); ctx.moveTo(screenX - ROAD_WIDTH/4, screenY + ROAD_WIDTH/2); ctx.lineTo(screenX - ROAD_WIDTH/4, screenY + BLOCK_SIZE - ROAD_WIDTH/2);
+                    ctx.moveTo(screenX + ROAD_WIDTH/4, screenY + ROAD_WIDTH/2); ctx.lineTo(screenX + ROAD_WIDTH/4, screenY + BLOCK_SIZE - ROAD_WIDTH/2); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(screenX + ROAD_WIDTH/2, screenY - ROAD_WIDTH/4); ctx.lineTo(screenX + BLOCK_SIZE - ROAD_WIDTH/2, screenY - ROAD_WIDTH/4);
+                    ctx.moveTo(screenX + ROAD_WIDTH/2, screenY + ROAD_WIDTH/4); ctx.lineTo(screenX + BLOCK_SIZE - ROAD_WIDTH/2, screenY + ROAD_WIDTH/4); ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    for(let i = -ROAD_WIDTH/2 + 25; i < ROAD_WIDTH/2 - 15; i += 15) {
+                        ctx.fillRect(screenX + i, screenY - ROAD_WIDTH/2 + 5, 6, 25); ctx.fillRect(screenX + i, screenY + ROAD_WIDTH/2 - 30, 6, 25);
+                        ctx.fillRect(screenX - ROAD_WIDTH/2 + 5, screenY + i, 25, 6); ctx.fillRect(screenX + ROAD_WIDTH/2 - 30, screenY + i, 25, 6);
+                    }
+
+                    let buildX = screenX + ROAD_WIDTH/2; let buildY = screenY + ROAD_WIDTH/2; let buildSizeFull = BLOCK_SIZE - ROAD_WIDTH;
+
+                    if (blockType === 'BUILDING') {
+                        ctx.fillStyle = '#45494a'; ctx.beginPath(); ctx.roundRect(buildX, buildY, buildSizeFull, buildSizeFull, 10); ctx.fill();
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'; ctx.lineWidth = 1; ctx.stroke();
+                        let innerBuildX = buildX + SIDEWALK_WIDTH; let innerBuildY = buildY + SIDEWALK_WIDTH; let innerBuildSize = buildSizeFull - SIDEWALK_WIDTH * 2;
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'; ctx.shadowBlur = 35; ctx.shadowOffsetX = 20; ctx.shadowOffsetY = 20;
+                        const roofColors = ['#2c3e50', '#1a252f', '#22313f', '#273746', '#17202a', '#212f3d'];
+                        ctx.fillStyle = roofColors[Math.abs(c * 11 + r * 17) % roofColors.length];
+                        ctx.beginPath(); ctx.roundRect(innerBuildX, innerBuildY, innerBuildSize, innerBuildSize, 5); ctx.fill();
+                        ctx.shadowColor = 'transparent';
+                        ctx.strokeStyle = '#111'; ctx.lineWidth = 6; ctx.stroke();
+                        if (Math.abs(c + r) % 4 === 0) {
+                            ctx.strokeStyle = 'rgba(241, 196, 15, 0.8)'; ctx.lineWidth = 4;
+                            ctx.beginPath(); ctx.arc(innerBuildX + innerBuildSize/2, innerBuildY + innerBuildSize/2, 45, 0, Math.PI*2); ctx.stroke();
+                            ctx.fillStyle = 'rgba(241, 196, 15, 0.8)'; ctx.font = 'bold 40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('H', innerBuildX + innerBuildSize/2, innerBuildY + innerBuildSize/2);
+                        }
+                        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(innerBuildX + 20, innerBuildY + 20, 30, 30);
+                        ctx.fillRect(innerBuildX + innerBuildSize - 70, innerBuildY + innerBuildSize - 90, 50, 70);
+                    } else if (blockType === 'PARK') {
+                        ctx.fillStyle = '#27ae60'; ctx.beginPath(); ctx.roundRect(buildX, buildY, buildSizeFull, buildSizeFull, 10); ctx.fill();
+                        ctx.fillStyle = '#ca6f1e'; ctx.fillRect(buildX + buildSizeFull/2 - 20, buildY, 40, buildSizeFull); ctx.fillRect(buildX, buildY + buildSizeFull/2 - 20, buildSizeFull, 40);
+                        let treeCount = Math.floor(hashBlock(c+1, r) * 15) + 8;
+                        for(let i=0; i<treeCount; i++) {
+                            let tx = buildX + 20 + (hashBlock(c, r+i) * (buildSizeFull - 40)); let ty = buildY + 20 + (hashBlock(c+i, r) * (buildSizeFull - 40));
+                            ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(tx + 5, ty + 5, 25, 0, Math.PI*2); ctx.fill();
+                            ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(tx, ty, 25, 0, Math.PI*2); ctx.fill();
+                            ctx.fillStyle = '#229954'; ctx.beginPath(); ctx.arc(tx, ty, 15, 0, Math.PI*2); ctx.fill();
+                        }
+                        let flowerColors = ['#f1c40f', '#e74c3c', '#9b59b6', '#fff'];
+                        for(let i=0; i<20; i++) {
+                            let fx = buildX + 10 + (hashBlock(c+i*2, r) * (buildSizeFull - 20)); let fy = buildY + 10 + (hashBlock(c, r+i*2) * (buildSizeFull - 20));
+                            ctx.fillStyle = flowerColors[i % 4]; ctx.beginPath(); ctx.arc(fx, fy, 4, 0, Math.PI*2); ctx.fill();
+                        }
+                    } else if (blockType === 'BEACH') {
+                        ctx.fillStyle = '#f4d03f'; ctx.beginPath(); ctx.roundRect(buildX, buildY, buildSizeFull, buildSizeFull, 10); ctx.fill();
+                        let waterMargin = 40; ctx.fillStyle = '#3498db';
+                        ctx.beginPath(); ctx.roundRect(buildX + waterMargin, buildY + waterMargin, buildSizeFull - waterMargin*2, buildSizeFull - waterMargin*2, 20); ctx.fill();
+                        ctx.strokeStyle = '#5dade2'; ctx.lineWidth = 3;
+                        for(let i=0; i<6; i++) {
+                            let wx = buildX + waterMargin + 30 + hashBlock(c, r+i) * (buildSizeFull - 140); let wy = buildY + waterMargin + 30 + hashBlock(c+i, r) * (buildSizeFull - 140);
+                            ctx.beginPath(); ctx.moveTo(wx, wy); ctx.quadraticCurveTo(wx + 20, wy - 15, wx + 40, wy); ctx.stroke();
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawJoystick() {
+            if (!isDragging) return;
+            ctx.save(); ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; ctx.beginPath(); ctx.arc(joyStart.x, joyStart.y, 60, 0, Math.PI*2); ctx.fill();
+            let dx = joyCurrent.x - joyStart.x; let dy = joyCurrent.y - joyStart.y; let dist = Math.hypot(dx, dy);
+            if (dist > 60) { dx = (dx/dist) * 60; dy = (dy/dist) * 60; }
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.beginPath(); ctx.arc(joyStart.x + dx, joyStart.y + dy, 25, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+
+        function update() {
+            if (!isGameRunning) return;
+            frameCount++;
+
+            player.update();
+            camera.x = player.worldX - (canvas.width / 2) / ZOOM;
+            camera.y = player.worldY - (canvas.height / 2) / ZOOM;
+
+            // Spawn Police
+            let spawnRate = Math.max(15, 60 - Math.floor(frameCount / 100));
+            if (frameCount % spawnRate === 0) {
+                let angle = Math.random() * Math.PI * 2; 
+                let radius = Math.max(canvas.width, canvas.height) / (2 * ZOOM) + 150; 
+                enemies.push(new Enemy(player.worldX + Math.cos(angle) * radius, player.worldY + Math.sin(angle) * radius));
+            }
+
+            // Spawn Traffic Cars (Xe dân thường)
+            if (frameCount % 45 === 0 && civilianCars.length < 25) { // Tăng xe dân cho đông đúc
+                let isVertical = Math.random() > 0.5;
+                let dir = Math.random() > 0.5 ? 1 : -1;
+                // Chọn một con đường ngẫu nhiên gần vị trí người chơi
+                let c = Math.floor(player.worldX / BLOCK_SIZE) + (Math.floor(Math.random() * 3) - 1);
+                let r = Math.floor(player.worldY / BLOCK_SIZE) + (Math.floor(Math.random() * 3) - 1);
+                
+                let laneOffset = 45 * dir; // Xe chạy bên làn phải
+                let spawnDist = Math.max(canvas.width, canvas.height) / (2 * ZOOM) + 200;
+                let spawnX = isVertical ? (c * BLOCK_SIZE + laneOffset) : (player.worldX + (Math.random() > 0.5 ? spawnDist : -spawnDist));
+                let spawnY = isVertical ? (player.worldY + (Math.random() > 0.5 ? spawnDist : -spawnDist)) : (r * BLOCK_SIZE + laneOffset);
+                
+                civilianCars.push(new CivilianCar(spawnX, spawnY, dir, isVertical));
+            }
+
+            // Spawn Pedestrians
+            if (frameCount % 40 === 0 && pedestrians.length < 45) {
+                let angle = Math.random() * Math.PI * 2; 
+                let radius = Math.max(canvas.width, canvas.height) / (2 * ZOOM) + 100; 
+                pedestrians.push(new Pedestrian(player.worldX + Math.cos(angle) * radius, player.worldY + Math.sin(angle) * radius));
+            }
+
+            // --- XỬ LÝ XE DÂN THƯỜNG (TRAFFIC CARS) ---
+            for (let i = civilianCars.length - 1; i >= 0; i--) {
+                let civ = civilianCars[i];
+                civ.update();
+
+                // Xoá xe dân nếu đi quá xa
+                if (getDistance(civ, player) > Math.max(canvas.width, canvas.height) / ZOOM + 500) { civilianCars.splice(i, 1); continue; }
+
+                // Đạn trúng Xe dân
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    if (getDistance(bullets[j], civ) < civ.radius + bullets[j].radius) {
+                        civ.hp--; bullets.splice(j, 1); createExplosion(civ.worldX, civ.worldY);
+                        if (civ.hp <= 0) {
+                            if (Math.random() > 0.9) bombs.push(new Bomb(civ.worldX, civ.worldY)); // 10% rớt bom
+                            else if (Math.random() > 0.4) moneys.push(new Money(civ.worldX, civ.worldY));
+                            civilianCars.splice(i, 1); score += 5; scoreElement.innerText = score;
+                        }
+                        break;
+                    }
+                }
+                if (!civilianCars[i]) continue;
+
+                // Player đâm Xe dân
+                if (getDistance(player, civ) < player.radius + civ.radius) {
+                    AudioEngine.playHit();
+                    player.takeDamage(10); // Taxi mất máu
+                    civ.hp -= 2; // Xe dân nổ tung
+                    
+                    let pushAngle = Math.atan2(civ.worldY - player.worldY, civ.worldX - player.worldX);
+                    player.worldX -= Math.cos(pushAngle) * 15; player.worldY -= Math.sin(pushAngle) * 15;
+                    createExplosion(civ.worldX, civ.worldY);
+                    
+                    if (civ.hp <= 0) { civilianCars.splice(i, 1); continue; }
+                }
+
+                // Cảnh sát đâm Xe dân (Chaotic!)
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    let e = enemies[j];
+                    if (getDistance(e, civ) < e.radius + civ.radius) {
+                        AudioEngine.playHit();
+                        e.hp--; // Cảnh sát bị móp méo/nổ
+                        civ.hp -= 2; // Xe dân luôn nổ tung
+                        
+                        let pushAngle = Math.atan2(civ.worldY - e.worldY, civ.worldX - e.worldX);
+                        e.worldX -= Math.cos(pushAngle) * 20; e.worldY -= Math.sin(pushAngle) * 20;
+                        createExplosion(civ.worldX, civ.worldY);
+                        
+                        if (e.hp <= 0) {
+                            enemies.splice(j, 1);
+                            let rand = Math.random();
+                            if(rand > 0.9) bombs.push(new Bomb(e.worldX, e.worldY));
+                            else if(rand > 0.8) powerUps.push(new MachineGunItem(e.worldX, e.worldY));
+                            else if(rand > 0.3) moneys.push(new Money(e.worldX, e.worldY));
+                            score += 10; scoreElement.innerText = score;
+                        }
+                        if (civ.hp <= 0) {
+                            civilianCars.splice(i, 1); break;
+                        }
+                    }
+                }
+            }
+
+            // Xử lý ăn Súng Máy
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                powerUps[i].update();
+                if (powerUps[i].life <= 0) { powerUps.splice(i, 1); continue; }
+                if (getDistance(player, powerUps[i]) < player.radius + powerUps[i].radius + 40) {
+                    player.machineGunTimer = 900; // 15 giây (1 giây = 60 frame)
+                    powerUps.splice(i, 1);
+                    AudioEngine.playCoin(); // Có thể tái sử dụng tiếng nhặt tiền
+                }
+            }
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].update();
+                if (bullets[i].life <= 0) bullets.splice(i, 1);
+            }
+
+            for (let i = moneys.length - 1; i >= 0; i--) {
+                moneys[i].update();
+                if (moneys[i].life <= 0) { moneys.splice(i, 1); continue; }
+                if (getDistance(player, moneys[i]) < player.radius + moneys[i].radius + 40) {
+                    score += moneys[i].value; scoreElement.innerText = score; moneys.splice(i, 1);
+                    AudioEngine.playCoin();
+                }
+            }
+
+            // Xử lý ăn quả Bom
+            for (let i = bombs.length - 1; i >= 0; i--) {
+                bombs[i].update();
+                if (bombs[i].life <= 0) { bombs.splice(i, 1); continue; }
+                if (getDistance(player, bombs[i]) < player.radius + bombs[i].radius + 40) {
+                    bombs.splice(i, 1);
+                    triggerNuke(); // Kích nổ tiêu diệt hết cảnh sát
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = pedestrians.length - 1; i >= 0; i--) {
+                let p = pedestrians[i]; p.update();
+                if (getDistance(p, player) > Math.max(canvas.width, canvas.height) / ZOOM + 200) { pedestrians.splice(i, 1); continue; }
+                if (getDistance(player, p) < player.radius + p.radius) {
+                    AudioEngine.playHit();
+                    for(let k=0; k<15; k++) particles.push(new Particle(p.worldX, p.worldY, '#e74c3c'));
+                    if (Math.random() > 0.9) bombs.push(new Bomb(p.worldX, p.worldY));
+                    else moneys.push(new Money(p.worldX, p.worldY)); 
+                    pedestrians.splice(i, 1);
+                    score += 5; scoreElement.innerText = score;
+                }
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i]; e.update();
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    if (getDistance(bullets[j], e) < e.radius + bullets[j].radius) {
+                        e.hp--; bullets.splice(j, 1); createExplosion(e.worldX, e.worldY);
+                        if (e.hp <= 0) {
+                            let rand = Math.random();
+                            if (rand > 0.9) bombs.push(new Bomb(e.worldX, e.worldY));
+                            else if (rand > 0.8) powerUps.push(new MachineGunItem(e.worldX, e.worldY));
+                            else if (rand > 0.2) moneys.push(new Money(e.worldX, e.worldY));
+                            enemies.splice(i, 1); score += 10; scoreElement.innerText = score;
+                        }
+                        break;
+                    }
+                }
+                if (enemies[i] && getDistance(player, enemies[i]) < player.radius + enemies[i].radius) {
+                    AudioEngine.playHit(); player.takeDamage(10);
+                    let pushAngle = Math.atan2(enemies[i].worldY - player.worldY, enemies[i].worldX - player.worldX);
+                    enemies[i].worldX += Math.cos(pushAngle) * 30; enemies[i].worldY += Math.sin(pushAngle) * 30;
+                    createExplosion(player.worldX, player.worldY);
+                }
+            }
+            
+            let isMoving = keys.w || keys.a || keys.s || keys.d || keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight || isDragging;
+            AudioEngine.updateLoop(isGameRunning, enemies.length, isMoving);
+        }
+
+        function draw() {
+            ctx.save();
+            ctx.scale(ZOOM, ZOOM); // Áp dụng tỷ lệ Zoom cho toàn bộ khung cảnh
+
+            drawCity();
+
+            civilianCars.forEach(c => c.draw()); // Vẽ xe dân
+            pedestrians.forEach(p => p.draw()); 
+            powerUps.forEach(p => p.draw()); // Vẽ hộp Súng Máy
+            bombs.forEach(b => b.draw()); // Vẽ Bom
+            moneys.forEach(m => m.draw());
+            bullets.forEach(b => b.draw());
+            enemies.forEach(e => e.draw());
+            if (player.health > 0) player.draw();
+            particles.forEach(p => p.draw());
+
+            ctx.restore();
+
+            drawJoystick(); // Joystick không bị zoom để không bị nhỏ lại
+        }
+
+        function loop() {
+            update(); draw();
+            if (isGameRunning) requestAnimationFrame(loop);
+        }
+
+        function init() {
+            player = new Player();
+            enemies = []; bullets = []; moneys = []; bombs = []; powerUps = []; particles = []; pedestrians = []; civilianCars = [];
+            score = 0; frameCount = 0; camera = { x: 0, y: 0 };
+            scoreElement.innerText = "0";
+            healthBar.style.width = '100%'; healthBar.style.backgroundColor = '#2ecc71';
+        }
+
+        function startGame() {
+            AudioEngine.init();
+            init(); isGameRunning = true;
+            uiLayer.classList.add('hidden'); startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden');
+            loop();
+        }
+
+        function endGame() {
+            isGameRunning = false;
+            AudioEngine.updateLoop(false, 0, false);
+            createExplosion(player.worldX, player.worldY); draw(); 
+            
+            // Xử lý lưu High Score
+            if (score > storedHighScore) {
+                storedHighScore = score;
+                localStorage.setItem('bankRobberyHighScore', storedHighScore);
+            }
+            
+            setTimeout(() => {
+                uiLayer.classList.remove('hidden'); gameOverScreen.classList.remove('hidden');
+                highScoreDisplay.innerText = '$' + storedHighScore;
+                finalScoreElement.innerText = '$' + score;
+                survivalTimeElement.innerText = Math.floor(frameCount / 60) + 's';
+            }, 800);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        // Vẽ màn hình chờ có áp dụng Zoom
+        ctx.save();
+        ctx.scale(ZOOM, ZOOM);
+        drawCity();
+        ctx.restore();
+
+    </script>
+</body>
+</html>

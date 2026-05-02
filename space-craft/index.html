@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- PWA & App Store optimization tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>Spacecraft</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden; /* Ngăn cuộn trang */
+            touch-action: none; /* Ngăn thao tác vuốt mặc định trên thiết bị di động */
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+        .hidden {
+            display: none !important;
+        }
+        /* Hiệu ứng nhấp nháy cho nút */
+        @keyframes pulse-neon {
+            0% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff; }
+            50% { box-shadow: 0 0 20px #0ff, 0 0 30px #0ff; }
+            100% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff; }
+        }
+        .neon-btn {
+            background: transparent;
+            color: #0ff;
+            border: 2px solid #0ff;
+            padding: 15px 30px;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            animation: pulse-neon 2s infinite;
+            transition: all 0.3s;
+        }
+        .neon-btn:hover {
+            background: #0ff;
+            color: #000;
+        }
+        #score-display {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 1.2rem;
+        color: #fff;
+        text-shadow: 0 0 5px #fff;
+        z-index: 5;
+        pointer-events: none;
+        line-height: 1.5;
+    }
+    #pause-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: transparent;
+        color: #0ff;
+        border: 2px solid #0ff;
+        padding: 8px 15px;
+        font-family: inherit;
+        cursor: pointer;
+        z-index: 10;
+        font-size: 0.8rem;
+    }
+    #mute-btn {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: transparent;
+        color: #0ff;
+        border: 2px solid #0ff;
+        padding: 8px 15px;
+        font-family: inherit;
+        cursor: pointer;
+        z-index: 10;
+        font-size: 0.8rem;
+    }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="score-display">
+        TIME: <span id="score">0.00s</span><br>
+        <span style="font-size: 0.8rem; color: #aaa;">BEST: <span id="bestScore">0.00s</span></span>
+    </div>
+    
+    <button id="pause-btn" class="hidden">II PAUSE</button>
+    <button id="mute-btn">🔊 ON</button>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Màn hình Tạm dừng -->
+    <div id="pauseScreen" class="ui-layer hidden">
+        <h1 class="text-3xl text-center mb-8 text-yellow-400 drop-shadow-[0_0_10px_rgba(255,255,0,0.8)]">PAUSED</h1>
+        <div class="flex flex-col gap-4 items-center">
+            <button id="resumeBtn" class="neon-btn" style="color: #0f0; border-color: #0f0;">RESUME</button>
+            <button id="quitBtn" class="neon-btn" style="color: #f00; border-color: #f00; animation: none;">QUIT</button>
+        </div>
+    </div>
+
+    <!-- Màn hình Bắt đầu -->
+    <div id="startScreen" class="ui-layer">
+        <h1 class="text-3xl text-center mb-8 text-cyan-400 drop-shadow-[0_0_10px_rgba(0,255,255,0.8)] leading-tight">SPACE<br>CRAFT</h1>
+        <p class="text-xs text-gray-400 mb-10 text-center leading-relaxed">
+            [PC]: Use mouse to move.<br>Dodge falling obstacles.<br><br>
+            [MOBILE]: Touch and drag to move.
+        </p>
+        <button id="startBtn" class="neon-btn">START</button>
+    </div>
+
+    <!-- Màn hình Game Over -->
+    <div id="gameOverScreen" class="ui-layer hidden">
+        <h1 class="text-3xl text-center mb-4 text-red-500 drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">MISSION FAILED!</h1>
+        <p class="text-xl mb-8">TIME: <span id="finalScore" class="text-yellow-400">0.00s</span></p>
+        <div class="flex flex-col gap-4 items-center w-full px-4">
+            <button id="restartBtn" class="neon-btn" style="color: #f0f; border-color: #f0f; animation: none; box-shadow: 0 0 10px #f0f;">RETRY</button>
+            <button id="reportBtn" class="neon-btn mt-2 text-sm px-4 py-2" style="color: #0f0; border-color: #0f0; animation: none;">✨ GET MISSION REPORT</button>
+        </div>
+        
+        <!-- Hộp thoại hiển thị báo cáo AI -->
+        <div id="reportContainer" class="hidden mt-6 p-4 border border-green-500 text-green-400 text-xs sm:text-sm max-w-md w-[90%] bg-black bg-opacity-90 rounded-md shadow-[0_0_15px_rgba(0,255,0,0.2)] overflow-y-auto max-h-48 leading-relaxed font-mono">
+            <p id="reportContent"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const apiKey = ""; // Môi trường thực thi sẽ tự động cung cấp API Key
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const bestScoreEl = document.getElementById('bestScore');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const pauseScreen = document.getElementById('pauseScreen');
+    const finalScoreEl = document.getElementById('finalScore');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const reportBtn = document.getElementById('reportBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const quitBtn = document.getElementById('quitBtn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const muteBtn = document.getElementById('mute-btn');
+    const reportContainer = document.getElementById('reportContainer');
+    const reportContent = document.getElementById('reportContent');
+
+    // Hệ thống Âm thanh (Web Audio API)
+    let isMuted = false;
+    let lastThrustTime = 0;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+        if (isMuted) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        if (type === 'click') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'explosion') {
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            noise.connect(gain);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            noise.start();
+        } else if (type === 'thrust') {
+            // Giới hạn tần suất phát âm thanh di chuyển để không bị chói
+            const now = Date.now();
+            if (now - lastThrustTime < 80) return; 
+            lastThrustTime = now;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+    }
+
+    // Kích thước canvas
+    let width, height;
+    function resize() {
+        const container = document.getElementById('game-container');
+        width = canvas.width = container.clientWidth;
+        height = canvas.height = container.clientHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Biến trạng thái trò chơi
+    let animationId;
+    let survivalTime = 0;
+    let startTime = 0;
+    let frameCount = 0;
+    let isGameOver = false;
+    let isPaused = false;
+    let totalPausedTime = 0;
+    let pauseBeginTime = 0;
+    let bestTime = parseFloat(localStorage.getItem('spacecraftBestTime')) || 0;
+    bestScoreEl.innerHTML = bestTime.toFixed(2) + "s";
+
+    // Mảng chứa các đối tượng
+    let player;
+    let enemies = [];
+    let particles = [];
+    let stars = [];
+
+    // Tọa độ trỏ chuột / cảm ứng
+    let mouse = {
+        x: width / 2,
+        y: height - 100
+    };
+
+    // Lớp Ngôi sao nền (Hiệu ứng Parallax)
+    class Star {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.size = Math.random() * 2 + 0.5;
+            this.speed = Math.random() * 3 + 1;
+            this.alpha = Math.random();
+        }
+        update() {
+            this.y += this.speed;
+            if (this.y > height) {
+                this.y = 0;
+                this.x = Math.random() * width;
+            }
+        }
+        draw() {
+            ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Lớp Người chơi
+    class Player {
+        constructor(x, y, radius, color) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.color = color;
+            this.speed = 0.15; // Tốc độ nội suy (lerp) bám theo chuột
+        }
+        update() {
+            // Kiểm tra xem người chơi có đang di chuyển đáng kể không
+            const dx = mouse.x - this.x;
+            const dy = mouse.y - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 2) {
+                playSound('thrust');
+            }
+
+            // Nội suy vị trí người chơi mượt mà theo con trỏ
+            this.x += dx * this.speed;
+            this.y += dy * this.speed;
+
+            // Giới hạn trong màn hình
+            this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));
+            this.y = Math.max(this.radius, Math.min(height - this.radius, this.y));
+        }
+        draw() {
+            ctx.save();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = this.color;
+            ctx.beginPath();
+            
+            // Vẽ hình dạng phi thuyền (tam giác)
+            ctx.moveTo(this.x, this.y - this.radius);
+            ctx.lineTo(this.x + this.radius, this.y + this.radius);
+            ctx.lineTo(this.x, this.y + this.radius * 0.5);
+            ctx.lineTo(this.x - this.radius, this.y + this.radius);
+            ctx.closePath();
+            
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Lớp Kẻ địch (Chướng ngại vật)
+    class Enemy {
+        constructor(x, y, radius, color, velocity) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.color = color;
+            this.velocity = velocity;
+            // Cho kẻ địch di chuyển zíc zắc nhẹ
+            this.angle = Math.random() * Math.PI * 2;
+            this.wiggleSpeed = Math.random() * 0.05 + 0.02;
+            this.wiggleAmount = Math.random() * 2 + 1;
+        }
+        update() {
+            this.x += this.velocity.x + Math.cos(this.angle) * this.wiggleAmount;
+            this.y += this.velocity.y;
+            this.angle += this.wiggleSpeed;
+        }
+        draw() {
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = this.color;
+            ctx.beginPath();
+            
+            // Vẽ hình dạng kẻ địch (hình đa giác/virus)
+            let sides = 6;
+            let step = (Math.PI * 2) / sides;
+            ctx.moveTo(this.x + this.radius * Math.cos(0), this.y + this.radius * Math.sin(0));
+            for(let i = 1; i < sides; i++) {
+                ctx.lineTo(this.x + this.radius * Math.cos(step * i), this.y + this.radius * Math.sin(step * i));
+            }
+            ctx.closePath();
+
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = this.color;
+            ctx.stroke();
+            
+            // Lõi kẻ địch
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 0.4, 0, Math.PI*2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    // Lớp Hiệu ứng Hạt (Vụ nổ)
+    const friction = 0.98;
+    class Particle {
+        constructor(x, y, radius, color, velocity) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.color = color;
+            this.velocity = velocity;
+            this.alpha = 1;
+        }
+        update() {
+            this.velocity.x *= friction;
+            this.velocity.y *= friction;
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.alpha -= 0.02; // Mờ dần
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    // Hàm tạo kẻ địch ngẫu nhiên
+    function spawnEnemies() {
+        if (frameCount % 60 === 0) { // Mỗi 60 khung hình (khoảng 1 giây)
+            const radius = Math.random() * 15 + 10;
+            const x = Math.random() * (width - radius * 2) + radius;
+            const y = -radius; // Xuất phát từ trên cùng ngoài màn hình
+            
+            // Độ khó tăng dần theo thời gian sống sót
+            const speedMultiplier = 1 + (survivalTime / 15); 
+            
+            const velocity = {
+                x: 0,
+                y: (Math.random() * 2 + 1) * speedMultiplier
+            };
+            
+            const hue = Math.random() * 60 + 280; // Màu tím/hồng/đỏ (280 - 340)
+            const color = `hsl(${hue}, 100%, 50%)`;
+            
+            enemies.push(new Enemy(x, y, radius, color, velocity));
+        }
+    }
+
+    // Hàm tạo vụ nổ
+    function createExplosion(x, y, color, radius) {
+        const particleCount = radius * 2;
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle(
+                x, y,
+                Math.random() * 3,
+                color,
+                {
+                    x: (Math.random() - 0.5) * (Math.random() * 8),
+                    y: (Math.random() - 0.5) * (Math.random() * 8)
+                }
+            ));
+        }
+    }
+
+    // Khởi tạo trò chơi
+    function init() {
+        player = new Player(width / 2, height - 100, 20, '#00ffff');
+        enemies = [];
+        particles = [];
+        stars = [];
+        survivalTime = 0;
+        totalPausedTime = 0;
+        startTime = performance.now();
+        frameCount = 0;
+        isGameOver = false;
+        isPaused = false;
+        scoreEl.innerHTML = "0.00s";
+        bestScoreEl.innerHTML = bestTime.toFixed(2) + "s";
+        pauseBtn.classList.remove('hidden');
+        mouse = { x: width / 2, y: height - 100 };
+
+        // Tạo sao nền
+        for(let i=0; i<50; i++) {
+            stars.push(new Star());
+        }
+    }
+
+    function togglePause() {
+        if (isGameOver) return;
+        playSound('click');
+        isPaused = !isPaused;
+        if (isPaused) {
+            pauseBeginTime = performance.now();
+            pauseScreen.classList.remove('hidden');
+            pauseBtn.innerText = "► PLAY";
+        } else {
+            totalPausedTime += (performance.now() - pauseBeginTime);
+            pauseScreen.classList.add('hidden');
+            pauseBtn.innerText = "II PAUSE";
+            animate(); // Tiếp tục vòng lặp
+        }
+    }
+
+    // Vòng lặp trò chơi chính
+    function animate() {
+        if (isGameOver || isPaused) return;
+        animationId = requestAnimationFrame(animate);
+        frameCount++;
+
+        // Hiệu ứng làm mờ nền nhẹ để tạo vệt di chuyển (motion blur)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, width, height);
+
+        // Vẽ sao
+        stars.forEach(star => {
+            star.update();
+            star.draw();
+        });
+
+        player.update();
+        player.draw();
+
+        // Cập nhật đồng hồ thời gian
+        survivalTime = (performance.now() - startTime - totalPausedTime) / 1000;
+        scoreEl.innerHTML = survivalTime.toFixed(2) + "s";
+
+        spawnEnemies();
+
+        // Xử lý hạt hiệu ứng
+        particles.forEach((particle, index) => {
+            if (particle.alpha <= 0) {
+                particles.splice(index, 1);
+            } else {
+                particle.update();
+                particle.draw();
+            }
+        });
+
+        // Xử lý kẻ địch & Va chạm
+        enemies.forEach((enemy, eIndex) => {
+            enemy.update();
+            enemy.draw();
+
+            // 1. Va chạm: Kẻ địch với Người chơi (Game Over)
+            const distPlayer = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (distPlayer - enemy.radius - player.radius < 0) {
+                endGame();
+            }
+
+            // Xóa kẻ địch khi ra khỏi màn hình bên dưới
+            if (enemy.y - enemy.radius > height) {
+                setTimeout(() => { enemies.splice(eIndex, 1); }, 0);
+            }
+        });
+    }
+
+    // Kết thúc trò chơi
+    function endGame() {
+        isGameOver = true;
+        playSound('explosion');
+        pauseBtn.classList.add('hidden');
+        cancelAnimationFrame(animationId);
+        createExplosion(player.x, player.y, player.color, 50); // Vụ nổ siêu to của người chơi
+        
+        // Lưu điểm cao
+        if (survivalTime > bestTime) {
+            bestTime = survivalTime;
+            localStorage.setItem('spacecraftBestTime', bestTime.toString());
+            bestScoreEl.innerHTML = bestTime.toFixed(2) + "s";
+        }
+
+        // Vẽ thêm 1 frame cuối để thấy vụ nổ
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, width, height);
+        particles.forEach(p => { p.update(); p.draw(); });
+
+        setTimeout(() => {
+            gameOverScreen.classList.remove('hidden');
+            finalScoreEl.innerHTML = survivalTime.toFixed(2) + "s";
+            // Reset trạng thái nút báo cáo
+            reportContainer.classList.add('hidden');
+            reportBtn.classList.remove('hidden');
+            reportBtn.disabled = false;
+            reportBtn.innerText = "✨ GET MISSION REPORT";
+        }, 1000);
+    }
+
+    // --- GEMINI API: TẠO BÁO CÁO CHIẾN DỊCH ---
+    async function generateMissionReport() {
+        playSound('click');
+        
+        // Kiểm tra Offline
+        if (!navigator.onLine) {
+            reportContainer.classList.remove('hidden');
+            reportContent.innerHTML = "<span class='text-yellow-500'>[OFFLINE] No internet connection. Cannot contact Space Command.</span>";
+            return;
+        }
+
+        reportBtn.disabled = true;
+        reportBtn.innerText = "ESTABLISHING CONNECTION...";
+        reportContainer.classList.remove('hidden');
+        reportContent.innerHTML = "<em>Decoding quantum signal from Command...</em>";
+
+        const prompt = `You are the AI system of Space Command. Write a short, dramatic military report (in English) about an exploration pilot who just died trying to dodge and fly through a dense asteroid/obstacle belt. 
+        The final survival time of this pilot is: ${survivalTime.toFixed(2)} seconds.
+        - If time < 10 seconds: Describe them as a clumsy rookie who crashed immediately upon entering the belt.
+        - If time between 10 - 30 seconds: Describe them as an excellent pilot who dodged countless debris before being overwhelmed.
+        - If time > 30 seconds: Honor them as a legendary pilot who set the record for flying deepest into the galaxy's most dangerous space zone.
+        Requirement: Only write the report content, maximum 3-4 sentences, with a strong sci-fi and tragic tone. No greetings or extra formatting.`;
+
+        // Logic retry (exponential backoff)
+        const maxRetries = 3;
+        let attempt = 0;
+        
+        while (attempt < maxRetries) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+                
+                if (!response.ok) throw new Error("API call failed");
+                
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (text) {
+                    reportBtn.classList.add('hidden');
+                    // Hiệu ứng gõ chữ (Typewriter effect)
+                    typeWriterEffect(text.trim(), reportContent);
+                    return;
+                }
+            } catch (error) {
+                attempt++;
+                await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+            }
+        }
+        
+        reportContent.innerHTML = "<span class='text-red-500'>[COMMS ERROR] Cannot connect to Space Command at this time. Signal jammed by debris.</span>";
+        reportBtn.innerText = "TRY AGAIN";
+        reportBtn.disabled = false;
+    }
+
+    function typeWriterEffect(text, element) {
+        element.innerHTML = "";
+        let i = 0;
+        const speed = 30; // ms per character
+        function type() {
+            if (i < text.length) {
+                element.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            }
+        }
+        type();
+    }
+
+    // Lắng nghe sự kiện người dùng
+    
+    // PC - Chuột
+    const container = document.getElementById('game-container');
+    container.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    // Mobile - Cảm ứng
+    container.addEventListener('touchstart', (e) => {
+        const rect = container.getBoundingClientRect();
+        mouse.x = e.touches[0].clientX - rect.left;
+        mouse.y = e.touches[0].clientY - rect.top;
+    }, {passive: false});
+
+    container.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Ngăn cuộn trang khi vuốt chơi game
+        const rect = container.getBoundingClientRect();
+        mouse.x = e.touches[0].clientX - rect.left;
+        mouse.y = e.touches[0].clientY - rect.top;
+    }, {passive: false});
+
+    // Nút giao diện
+    startBtn.addEventListener('click', () => {
+        playSound('click');
+        startScreen.classList.add('hidden');
+        init();
+        animate();
+    });
+
+    restartBtn.addEventListener('click', () => {
+        playSound('click');
+        gameOverScreen.classList.add('hidden');
+        init();
+        animate();
+    });
+
+    pauseBtn.addEventListener('click', togglePause);
+    
+    resumeBtn.addEventListener('click', togglePause);
+    
+    muteBtn.addEventListener('click', () => {
+        isMuted = !isMuted;
+        muteBtn.innerText = isMuted ? "🔇 OFF" : "🔊 ON";
+        muteBtn.style.color = isMuted ? "#f00" : "#0ff";
+        muteBtn.style.borderColor = isMuted ? "#f00" : "#0ff";
+        if (!isMuted) playSound('click');
+    });
+
+    quitBtn.addEventListener('click', () => {
+        playSound('click');
+        isGameOver = true;
+        isPaused = false;
+        pauseScreen.classList.add('hidden');
+        pauseBtn.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+        ctx.fillStyle = '#050505'; // Xóa canvas
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
+
+    reportBtn.addEventListener('click', () => {
+        generateMissionReport();
+    });
+
+    // Vẽ nền lần đầu trước khi chơi
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lord of the Green Forest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a472a; /* Màu xanh lá đậm của rừng */
+            font-family: 'Nunito', sans-serif;
+            touch-action: none; /* Ngăn chặn cuộn trang khi vuốt trên điện thoại */
+            user-select: none;
+        }
+        canvas {
+            display: block;
+        }
+        .heading-font {
+            font-family: 'Fredoka One', cursive;
+        }
+        /* Joystick Styles */
+        #joystick-zone {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            display: none; /* Chỉ hiện trên thiết bị cảm ứng hoặc khi được kích hoạt */
+            z-index: 10;
+        }
+        #joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+        @media (hover: none) and (pointer: coarse) {
+            #joystick-zone {
+                display: block;
+            }
+            .desktop-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- Giao diện UI -->
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-20">
+        <div class="flex justify-between items-start">
+            <div class="bg-black/50 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 shadow-lg pointer-events-auto">
+                <h1 class="heading-font text-xl text-yellow-400 drop-shadow-md">Score: <span id="score">0</span></h1>
+            </div>
+            <div class="flex flex-col items-end gap-2 pointer-events-auto">
+                <div class="bg-black/50 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 shadow-lg text-right">
+                    <p class="font-bold text-gray-200">High Score: <span id="high-score">0</span></p>
+                    <p class="text-sm text-gray-400">Level: <span id="level">1</span></p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="mute-btn" class="bg-black/50 w-10 h-10 rounded-full border border-white/20 text-xl hover:bg-black/70 transition flex items-center justify-center backdrop-blur-sm" title="Mute/Unmute">🔊</button>
+                    <button id="pause-btn" class="bg-black/50 w-10 h-10 rounded-full border border-white/20 text-xl hover:bg-black/70 transition flex items-center justify-center backdrop-blur-sm" title="Pause (P Key)">⏸️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Màn hình Tạm Dừng -->
+    <div id="pause-overlay" class="absolute inset-0 bg-black/60 z-40 hidden flex-col items-center justify-center backdrop-blur-sm">
+        <h2 class="heading-font text-5xl text-white mb-6 tracking-widest drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">PAUSED</h2>
+        <button id="resume-btn" class="heading-font text-2xl bg-white text-black px-8 py-3 rounded-full hover:bg-gray-300 transition transform hover:scale-105 active:scale-95 shadow-lg pointer-events-auto">
+            RESUME
+        </button>
+    </div>
+
+    <!-- Màn hình bắt đầu / Kết thúc -->
+    <div id="overlay" class="absolute inset-0 bg-black/80 z-30 flex flex-col items-center justify-center p-6 backdrop-blur-sm transition-opacity duration-300">
+        <h1 id="game-title" class="heading-font text-5xl text-yellow-400 mb-4 text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">LORD OF THE GREEN FOREST</h1>
+        <p id="game-message" class="text-xl mb-8 text-center text-gray-300 max-w-md desktop-hint">
+            You are a Tiger (🐅). Hunt Deer (🦌) and Boars (🐗) to survive.<br><br>
+            <span class="text-red-400 font-bold">WARNING:</span> Beware of Hunters (🤠) and their bullets!<br><br>
+            Use <span class="font-bold text-white">W A S D</span> or <span class="font-bold text-white">Arrow Keys</span> to move.
+        </p>
+        <p id="game-message-mobile" class="text-xl mb-8 text-center text-gray-300 max-w-md hidden md:hidden">
+            You are a Tiger (🐅). Hunt Deer (🦌) and Boars (🐗) to survive.<br><br>
+            <span class="text-red-400 font-bold">WARNING:</span> Beware of Hunters (🤠) and their bullets!<br><br>
+            Use the <span class="font-bold text-white">Joystick</span> in the bottom corner to move.
+        </p>
+        
+        <div id="final-score-container" class="hidden flex-col items-center mb-6">
+            <p class="text-2xl text-gray-300">Your Score</p>
+            <p id="final-score" class="heading-font text-6xl text-yellow-400 mt-2">0</p>
+        </div>
+
+        <button id="start-btn" class="heading-font text-2xl bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black px-8 py-4 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.5)] transform transition hover:scale-105 active:scale-95 pointer-events-auto">
+            START HUNTING
+        </button>
+    </div>
+
+    <!-- Joystick (Hiển thị trên Mobile) -->
+    <div id="joystick-zone" class="pointer-events-auto">
+        <div id="joystick-knob"></div>
+    </div>
+
+    <!-- Canvas Trò Chơi -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // Cấu hình cơ bản
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI Elements
+        const overlay = document.getElementById('overlay');
+        const startBtn = document.getElementById('start-btn');
+        const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('high-score');
+        const levelEl = document.getElementById('level');
+        const gameTitle = document.getElementById('game-title');
+        const gameMessage = document.getElementById('game-message');
+        const finalScoreContainer = document.getElementById('final-score-container');
+        const finalScoreEl = document.getElementById('final-score');
+        
+        // Thêm các Elements mới cho Pause/Mute
+        const muteBtn = document.getElementById('mute-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const pauseOverlay = document.getElementById('pause-overlay');
+        const resumeBtn = document.getElementById('resume-btn');
+        
+        // Joystick Elements
+        const joystickZone = document.getElementById('joystick-zone');
+        const joystickKnob = document.getElementById('joystick-knob');
+
+        // Biến trạng thái trò chơi
+        let animationId;
+        let gameActive = false;
+        let isPaused = false;
+        let isMuted = false;
+        let lastTime = 0;
+        let score = 0;
+        let highScore = localStorage.getItem('chuaterungxanh_highscore') || 0;
+        let level = 1;
+        highScoreEl.innerText = highScore;
+        
+        // Cấu hình thế giới ảo
+        const WORLD_WIDTH = 3000;
+        const WORLD_HEIGHT = 3000;
+        
+        // Camera (Điểm giữa màn hình)
+        let camera = { x: 0, y: 0 };
+
+        // Input Handling
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+        let joystickVector = { x: 0, y: 0 };
+
+        // Lắng nghe sự kiện bàn phím
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+            // Bấm phím P để tạm dừng / tiếp tục
+            if (e.key.toLowerCase() === 'p') togglePause();
+        });
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+        });
+
+        // Lắng nghe sự kiện Joystick (Touch)
+        let isDraggingJoystick = false;
+        let joystickCenter = { x: 0, y: 0 };
+        const maxJoystickRadius = 40;
+
+        // Chỉ hiển thị message mobile nếu là màn hình nhỏ
+        if (window.innerWidth <= 768 || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+            document.getElementById('game-message-mobile').classList.remove('hidden');
+            document.querySelector('.desktop-hint').classList.add('hidden');
+            joystickZone.style.display = 'block';
+        }
+
+        joystickZone.addEventListener('touchstart', handleJoystickStart, {passive: false});
+        joystickZone.addEventListener('touchmove', handleJoystickMove, {passive: false});
+        joystickZone.addEventListener('touchend', handleJoystickEnd);
+        joystickZone.addEventListener('touchcancel', handleJoystickEnd);
+        
+        // Cho phép dùng chuột kéo joystick trên máy tính (để test)
+        joystickZone.addEventListener('mousedown', handleJoystickStart);
+        window.addEventListener('mousemove', handleJoystickMove);
+        window.addEventListener('mouseup', handleJoystickEnd);
+
+        function handleJoystickStart(e) {
+            if(!gameActive) return;
+            e.preventDefault();
+            isDraggingJoystick = true;
+            const rect = joystickZone.getBoundingClientRect();
+            joystickCenter = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+            updateJoystick(e);
+        }
+
+        function handleJoystickMove(e) {
+            if (!isDraggingJoystick || !gameActive) return;
+            e.preventDefault();
+            updateJoystick(e);
+        }
+
+        function handleJoystickEnd(e) {
+            if (!isDraggingJoystick) return;
+            isDraggingJoystick = false;
+            joystickKnob.style.transform = `translate(-50%, -50%)`;
+            joystickVector = { x: 0, y: 0 };
+        }
+
+        function updateJoystick(e) {
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            let dx = clientX - joystickCenter.x;
+            let dy = clientY - joystickCenter.y;
+            let distance = Math.hypot(dx, dy);
+
+            // Giới hạn trong vùng joystick
+            if (distance > maxJoystickRadius) {
+                dx = (dx / distance) * maxJoystickRadius;
+                dy = (dy / distance) * maxJoystickRadius;
+            }
+
+            joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+            // Chuẩn hóa vector từ -1 đến 1
+            joystickVector.x = dx / maxJoystickRadius;
+            joystickVector.y = dy / maxJoystickRadius;
+        }
+
+        // Thay đổi kích thước Canvas
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // ---------------------------------------------------------
+        // HỆ THỐNG ÂM THANH (WEB AUDIO API)
+        // ---------------------------------------------------------
+        const SoundManager = {
+            ctx: null,
+            lastStepTime: 0,
+            init: function() {
+                // Khởi tạo AudioContext khi người dùng tương tác (nhấn Bắt Đầu)
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+            playFootstep: function() {
+                if (!this.ctx || isMuted) return;
+                const now = this.ctx.currentTime;
+                // Giới hạn tốc độ phát tiếng bước chân (0.25 giây/lần)
+                if (now - this.lastStepTime < 0.25) return;
+                this.lastStepTime = now;
+
+                // Tạo tiếng thịch trầm (bước chân) bằng sóng Sine
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.exponentialRampToValueAtTime(20, now + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                
+                osc.start(now);
+                osc.stop(now + 0.1);
+            },
+            playGunshot: function() {
+                if (!this.ctx || isMuted) return;
+                const now = this.ctx.currentTime;
+                const dur = 0.4; // Độ dài tiếng súng
+                
+                // Tạo tiếng nổ bằng sóng nhiễu (White Noise)
+                const bufferSize = this.ctx.sampleRate * dur;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                
+                // Dùng bộ lọc Lowpass để tiếng nổ trầm và vang hơn
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(2000, now);
+                filter.frequency.exponentialRampToValueAtTime(200, now + dur);
+                
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+                
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                noise.start(now);
+            },
+            playBite: function() {
+                if (!this.ctx || isMuted) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                // Tiếng cắn/ngoạm (âm sắc nhọn, dứt khoát)
+                osc.type = 'triangle'; 
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                
+                osc.start(now);
+                osc.stop(now + 0.15);
+            },
+            playTigerHit: function() {
+                if (!this.ctx || isMuted) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+                
+                // Tiếng rống gầm trầm kéo dài khi bị thương
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.6);
+                
+                // Lọc bỏ âm chói, giữ lại âm trầm vang
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1000, now);
+                filter.frequency.exponentialRampToValueAtTime(200, now + 0.6);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                gain.gain.setValueAtTime(0.6, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                
+                osc.start(now);
+                osc.stop(now + 0.6);
+            }
+        };
+
+        // ---------------------------------------------------------
+        // CÁC LỚP ĐỐI TƯỢNG (CLASSES)
+        // ---------------------------------------------------------
+
+        class Entity {
+            constructor(x, y, radius, emoji, speed) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.emoji = emoji;
+                this.speed = speed;
+                this.vx = 0;
+                this.vy = 0;
+                this.isFacingLeft = false;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // Lật ngang (Flip) emoji.
+                // Đa số emoji động vật (🐅, 🦌, 🐗) mặc định quay đầu sang TRÁI.
+                // Nên khi đi sang PHẢI (!isFacingLeft), ta mới cần lật nó lại.
+                if (!this.isFacingLeft) {
+                    ctx.scale(-1, 1);
+                }
+
+                ctx.font = `${this.radius * 2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.emoji, 0, 0);
+
+                // Gỡ lỗi: Vẽ viền va chạm
+                // ctx.beginPath();
+                // ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                // ctx.strokeStyle = 'red';
+                // ctx.stroke();
+                
+                ctx.restore();
+            }
+
+            updatePos(dt) {
+                this.x += this.vx * this.speed * dt * 60; // Chuẩn hóa theo 60fps
+                this.y += this.vy * this.speed * dt * 60;
+
+                // Giữ đối tượng trong bản đồ
+                this.x = Math.max(this.radius, Math.min(WORLD_WIDTH - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(WORLD_HEIGHT - this.radius, this.y));
+
+                // Cập nhật hướng nhìn
+                if (this.vx < -0.1) this.isFacingLeft = true;
+                if (this.vx > 0.1) this.isFacingLeft = false;
+            }
+        }
+
+        class Tiger extends Entity {
+            constructor(x, y) {
+                super(x, y, 25, '🐅', 6);
+                this.walkCycle = 0; // Thêm biến để tạo hiệu ứng bước đi
+            }
+
+            draw() {
+                ctx.save();
+                
+                // Tạo hiệu ứng nhún và lắc lư khi di chuyển
+                let yOffset = 0;
+                let angle = 0;
+                if (this.walkCycle > 0) {
+                    angle = Math.sin(this.walkCycle) * 0.15; // Lắc lư
+                    yOffset = Math.abs(Math.cos(this.walkCycle)) * -4; // Nhún lên xuống
+                }
+
+                ctx.translate(this.x, this.y + yOffset);
+                ctx.rotate(angle);
+                
+                if (!this.isFacingLeft) {
+                    ctx.scale(-1, 1);
+                }
+
+                ctx.font = `${this.radius * 2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.emoji, 0, 0);
+                
+                ctx.restore();
+            }
+
+            update(dt) {
+                // Lấy input từ bàn phím
+                let inputX = 0;
+                let inputY = 0;
+
+                if (keys.a || keys.ArrowLeft) inputX -= 1;
+                if (keys.d || keys.ArrowRight) inputX += 1;
+                if (keys.w || keys.ArrowUp) inputY -= 1;
+                if (keys.s || keys.ArrowDown) inputY += 1;
+
+                // Ưu tiên Joystick nếu đang dùng
+                if (joystickVector.x !== 0 || joystickVector.y !== 0) {
+                    inputX = joystickVector.x;
+                    inputY = joystickVector.y;
+                }
+
+                // Chuẩn hóa vector di chuyển chéo để không đi nhanh hơn
+                let length = Math.hypot(inputX, inputY);
+                if (length > 0) {
+                    this.vx = inputX / length;
+                    this.vy = inputY / length;
+                    this.walkCycle += dt * 15; // Tăng chu kỳ bước đi khi có di chuyển
+                    SoundManager.playFootstep(); // Phát tiếng bước chân
+                } else {
+                    this.vx = 0;
+                    this.vy = 0;
+                    this.walkCycle = 0; // Dừng hiệu ứng khi đứng im
+                }
+
+                this.updatePos(dt);
+            }
+        }
+
+        class Prey extends Entity {
+            constructor() {
+                // Random vị trí
+                const x = Math.random() * (WORLD_WIDTH - 100) + 50;
+                const y = Math.random() * (WORLD_HEIGHT - 100) + 50;
+                
+                // Chọn ngẫu nhiên Nai hoặc Lợn rừng
+                const isBoar = Math.random() > 0.7;
+                super(x, y, isBoar ? 20 : 18, isBoar ? '🐗' : '🦌', isBoar ? 1.5 : 2.5);
+                
+                this.points = isBoar ? 20 : 10;
+                this.changeDirectionTimer = 0;
+            }
+
+            update(dt, tiger) {
+                this.changeDirectionTimer -= dt;
+                
+                // Khoảng cách tới Hổ
+                const distToTiger = Math.hypot(tiger.x - this.x, tiger.y - this.y);
+
+                if (distToTiger < 300) {
+                    // Chạy trốn khỏi hổ
+                    const dx = this.x - tiger.x;
+                    const dy = this.y - tiger.y;
+                    const len = Math.hypot(dx, dy);
+                    this.vx = dx / len;
+                    this.vy = dy / len;
+                    this.changeDirectionTimer = 0.5; // Reset timer wander
+                } else if (this.changeDirectionTimer <= 0) {
+                    // Đi lang thang ngẫu nhiên
+                    const angle = Math.random() * Math.PI * 2;
+                    this.vx = Math.cos(angle);
+                    this.vy = Math.sin(angle);
+                    this.changeDirectionTimer = Math.random() * 2 + 1; // 1 đến 3 giây
+                }
+
+                this.updatePos(dt);
+            }
+        }
+
+        class Hunter extends Entity {
+            constructor(spawnX, spawnY) {
+                super(spawnX, spawnY, 25, '🤠', 1.8);
+                this.shootTimer = Math.random() * 2 + 1; // 1-3 giây bắn 1 lần
+                this.state = 'chase'; // chase or aim
+                this.flankDirection = Math.random() > 0.5 ? 1 : -1; // Chọn hướng vòng (trái/phải) ngẫu nhiên khi bị kẹt
+            }
+
+            draw() {
+                super.draw();
+                // Vẽ hiệu ứng chóng mặt (Stunned)
+                if (this.stunTimer > 0) {
+                    ctx.save();
+                    ctx.translate(this.x, this.y - 30);
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    // Ngôi sao xoay vòng
+                    ctx.rotate(Date.now() / 150);
+                    ctx.fillText('💫', 0, 0);
+                    ctx.restore();
+                }
+            }
+
+            update(dt, tiger) {
+                const distToTiger = Math.hypot(tiger.x - this.x, tiger.y - this.y);
+                const angleToTiger = Math.atan2(tiger.y - this.y, tiger.x - this.x);
+
+                // --- KIỂM TRA TẦM NHÌN (Line of Sight - LoS) ---
+                let hasClearShot = true;
+                for (let r of rocks) {
+                    // Tối ưu hóa: Chỉ kiểm tra đá nằm trong phạm vi giữa thợ săn và hổ
+                    if (Math.hypot(r.x - this.x, r.y - this.y) > distToTiger + r.radius) continue;
+
+                    // Toán học: Tìm điểm gần nhất trên đoạn đạn bay (Hunter -> Tiger) tới tâm tảng đá
+                    let dx = tiger.x - this.x;
+                    let dy = tiger.y - this.y;
+                    let lenSq = distToTiger * distToTiger;
+                    
+                    let t = ((r.x - this.x) * dx + (r.y - this.y) * dy) / lenSq;
+                    t = Math.max(0, Math.min(1, t)); // Giới hạn trên đoạn thẳng [0, 1]
+                    
+                    let closestX = this.x + t * dx;
+                    let closestY = this.y + t * dy;
+                    
+                    let distToLine = Math.hypot(r.x - closestX, r.y - closestY);
+                    
+                    // Nếu khoảng cách từ tâm đá đến đường đạn nhỏ hơn bán kính đá => Bị vướng
+                    if (distToLine < r.radius) {
+                        hasClearShot = false;
+                        break;
+                    }
+                }
+
+                // --- LOGIC DI CHUYỂN & BẮN ---
+                if (!hasClearShot) {
+                    // Nếu bị vướng đá: Không đi thẳng tới hổ nữa, đi vòng sang ngang để tìm góc bắn
+                    let flankAngle = angleToTiger + (Math.PI / 2.5) * this.flankDirection;
+                    this.vx = Math.cos(flankAngle);
+                    this.vy = Math.sin(flankAngle);
+                } else {
+                    // Tầm nhìn thoáng: Di chuyển tiếp cận bình thường
+                    if (distToTiger > 400) {
+                        // Tiến lại gần
+                        this.vx = Math.cos(angleToTiger);
+                        this.vy = Math.sin(angleToTiger);
+                    } else if (distToTiger < 200) {
+                        // Lùi lại nếu hổ quá gần
+                        this.vx = -Math.cos(angleToTiger);
+                        this.vy = -Math.sin(angleToTiger);
+                    } else {
+                        // Đứng yên ngắm bắn
+                        this.vx = 0;
+                        this.vy = 0;
+                    }
+                }
+
+                this.shootTimer -= dt;
+                // CHỈ BẮN khi khoảng cách đủ gần VÀ có tầm nhìn thoáng (không vướng đá)
+                if (this.shootTimer <= 0 && distToTiger < 600 && hasClearShot) {
+                    // Bắn
+                    bullets.push(new Bullet(this.x, this.y, angleToTiger));
+                    SoundManager.playGunshot(); // Phát tiếng súng nổ
+                    this.shootTimer = Math.random() * 2 + 1.5 - (level * 0.1); // Bắn nhanh hơn theo level
+                    if(this.shootTimer < 0.5) this.shootTimer = 0.5; // Giới hạn tốc độ bắn tối đa
+                }
+
+                // Luôn hướng mặt về phía hổ
+                this.isFacingLeft = (tiger.x < this.x);
+                
+                this.x += this.vx * this.speed * dt * 60;
+                this.y += this.vy * this.speed * dt * 60;
+                
+                this.x = Math.max(this.radius, Math.min(WORLD_WIDTH - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(WORLD_HEIGHT - this.radius, this.y));
+            }
+        }
+
+        class Bullet extends Entity {
+            constructor(x, y, angle) {
+                super(x, y, 6, '⏺', 8 + level * 0.5); // Đạn nhanh hơn theo level
+                this.vx = Math.cos(angle);
+                this.vy = Math.sin(angle);
+                // Giảm kích thước font cho đạn
+                this.fontSize = 12; 
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.font = `${this.fontSize}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ff4444'; // Màu viền/chữ
+                ctx.fillText('➔', 0, 0); // Dùng mũi tên làm đạn
+
+                // Xoay mũi tên theo hướng bay
+                const angle = Math.atan2(this.vy, this.vx);
+                ctx.rotate(angle);
+                ctx.restore();
+            }
+
+            update(dt) {
+                this.x += this.vx * this.speed * dt * 60;
+                this.y += this.vy * this.speed * dt * 60;
+            }
+
+            isOutOfBounds() {
+                return (this.x < 0 || this.x > WORLD_WIDTH || this.y < 0 || this.y > WORLD_HEIGHT);
+            }
+        }
+
+        // Lớp Núi Đá (Vật cản)
+        class Rock {
+            constructor(x, y, radius, emoji) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.emoji = emoji;
+            }
+            draw() {
+                // Chỉ vẽ khi nằm trong camera (Tối ưu hóa ở hàm drawBackground)
+                ctx.font = `${this.radius * 2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.emoji, this.x, this.y);
+            }
+        }
+
+        // Lớp Sinh vật bay lượn (Chim, Bướm)
+        class Bird extends Entity {
+            constructor() {
+                super(
+                    Math.random() * WORLD_WIDTH, 
+                    Math.random() * WORLD_HEIGHT, 
+                    15, 
+                    Math.random() > 0.5 ? '🦅' : '🦜', // Chim đại bàng hoặc Vẹt
+                    3
+                );
+                this.angle = Math.random() * Math.PI * 2;
+                this.changeTimer = 0;
+                // Bay lơ lửng cao hơn mặt đất
+                this.zOffset = 60; 
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y - this.zOffset);
+                if (!this.isFacingLeft) ctx.scale(-1, 1);
+                
+                // Hiệu ứng đập cánh mượt mà
+                const flap = Math.sin(Date.now() / 150 * this.speed) * 0.2;
+                ctx.rotate(flap);
+
+                ctx.font = `${this.radius * 2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.emoji, 0, 0);
+                
+                // Vẽ bóng mờ dưới mặt đất
+                ctx.restore();
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(1, 0.3);
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 0.8, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update(dt) {
+                this.changeTimer -= dt;
+                if(this.changeTimer <= 0) {
+                    this.angle += (Math.random() - 0.5) * 1.5; // Đổi hướng bay từ từ
+                    this.changeTimer = Math.random() * 2 + 1;
+                }
+                
+                this.vx = Math.cos(this.angle);
+                this.vy = Math.sin(this.angle);
+
+                this.x += this.vx * this.speed * dt * 60;
+                this.y += this.vy * this.speed * dt * 60;
+
+                // Cập nhật hướng quay đầu
+                if (this.vx < -0.1) this.isFacingLeft = true;
+                if (this.vx > 0.1) this.isFacingLeft = false;
+
+                // Nếu bay ra khỏi map thì vòng lại
+                if (this.x < 0) this.x = WORLD_WIDTH;
+                if (this.x > WORLD_WIDTH) this.x = 0;
+                if (this.y < 0) this.y = WORLD_HEIGHT;
+                if (this.y > WORLD_HEIGHT) this.y = 0;
+            }
+        }
+
+        // Lớp Bướm (bay thấp, chuyển hướng liên tục)
+        class Butterfly extends Entity {
+            constructor() {
+                super(
+                    Math.random() * WORLD_WIDTH, 
+                    Math.random() * WORLD_HEIGHT, 
+                    8, 
+                    '🦋', 
+                    1.2
+                );
+                this.angle = Math.random() * Math.PI * 2;
+                this.changeTimer = 0;
+                this.zOffset = 20; // Bay thấp hơn chim
+                this.flapOffset = Math.random() * 10;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y - this.zOffset);
+                if (!this.isFacingLeft) ctx.scale(-1, 1);
+                
+                // Bướm đập cánh nhanh hơn
+                const flap = Math.sin(Date.now() / 80 + this.flapOffset) * 0.3;
+                ctx.rotate(flap);
+
+                ctx.font = `${this.radius * 2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.emoji, 0, 0);
+                
+                // Bóng của bướm
+                ctx.restore();
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(1, 0.3);
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 0.6, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update(dt) {
+                this.changeTimer -= dt;
+                if(this.changeTimer <= 0) {
+                    this.angle += (Math.random() - 0.5) * 3; // Bướm bay lượn ngoằn ngoèo
+                    this.changeTimer = Math.random() * 0.5 + 0.2;
+                }
+                
+                this.vx = Math.cos(this.angle);
+                this.vy = Math.sin(this.angle);
+
+                this.x += this.vx * this.speed * dt * 60;
+                this.y += this.vy * this.speed * dt * 60;
+
+                if (this.vx < -0.1) this.isFacingLeft = true;
+                if (this.vx > 0.1) this.isFacingLeft = false;
+
+                if (this.x < 0) this.x = WORLD_WIDTH;
+                if (this.x > WORLD_WIDTH) this.x = 0;
+                if (this.y < 0) this.y = WORLD_HEIGHT;
+                if (this.y > WORLD_HEIGHT) this.y = 0;
+            }
+        }
+
+        // Lớp Thác Nước
+        class Waterfall {
+            constructor(x, y) {
+                this.x = x; 
+                this.y = y;
+                this.waterParticles = [];
+                // Khởi tạo các bọt nước chảy xuống
+                for(let i=0; i<30; i++) {
+                    this.waterParticles.push({
+                        x: x + Math.random() * 120 - 60,
+                        y: y + Math.random() * 200 - 100,
+                        speed: Math.random() * 3 + 2
+                    });
+                }
+            }
+
+            draw() {
+                ctx.save();
+                
+                // Vẽ hồ nước sâu bên dưới
+                ctx.fillStyle = '#0f5e9c'; 
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y + 80, 110, 60, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Vẽ dòng nước đang chảy từ trên xuống
+                ctx.fillStyle = '#2980b9';
+                ctx.beginPath();
+                ctx.moveTo(this.x - 60, this.y - 120);
+                ctx.lineTo(this.x + 60, this.y - 120);
+                ctx.lineTo(this.x + 90, this.y + 80);
+                ctx.lineTo(this.x - 90, this.y + 80);
+                ctx.fill();
+                
+                // Hiệu ứng bọt nước / sóng nước chảy
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                this.waterParticles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, Math.random() * 2 + 2, 0, Math.PI*2);
+                    ctx.fill();
+                    p.y += p.speed;
+                    // Khi chạm đáy hồ, vòng lên đỉnh thác
+                    if(p.y > this.y + 90) {
+                        p.y = this.y - 120;
+                        p.x = this.x + Math.random() * 120 - 60;
+                    }
+                });
+
+                ctx.restore();
+            }
+        }
+
+        // Môi trường (Cây cối, Núi đá)
+        const trees = [];
+        const rocks = [];
+        const mushrooms = [];
+        const waterfalls = [];
+        
+        function generateEnvironment() {
+            trees.length = 0;
+            rocks.length = 0;
+            mushrooms.length = 0;
+            waterfalls.length = 0;
+
+            // Sinh Thác nước và cấu trúc đỉnh thác
+            const numWaterfalls = 4;
+            for(let i = 0; i < numWaterfalls; i++) {
+                let wx = Math.random() * (WORLD_WIDTH - 600) + 300;
+                let wy = Math.random() * (WORLD_HEIGHT - 600) + 300;
+                waterfalls.push(new Waterfall(wx, wy));
+                
+                // Đặt các dãy núi rắn bao quanh đỉnh thác nước để làm vật cản
+                rocks.push(new Rock(wx - 60, wy - 130, 40, '⛰️'));
+                rocks.push(new Rock(wx, wy - 140, 50, '⛰️'));
+                rocks.push(new Rock(wx + 60, wy - 130, 40, '⛰️'));
+            }
+            
+            const numTrees = 300;
+            const treeEmojis = ['🌲', '🌳', '🌴', '🌿'];
+            for (let i = 0; i < numTrees; i++) {
+                trees.push({
+                    x: Math.random() * WORLD_WIDTH,
+                    y: Math.random() * WORLD_HEIGHT,
+                    emoji: treeEmojis[Math.floor(Math.random() * treeEmojis.length)],
+                    size: Math.random() * 30 + 30
+                });
+            }
+
+            // Sinh ngẫu nhiên các cụm núi/đá
+            const numRocks = 40;
+            const rockEmojis = ['🪨', '⛰️'];
+            for (let i = 0; i < numRocks; i++) {
+                rocks.push(new Rock(
+                    Math.random() * (WORLD_WIDTH - 200) + 100,
+                    Math.random() * (WORLD_HEIGHT - 200) + 100,
+                    Math.random() > 0.5 ? 40 : 60, // Kích thước đá/núi
+                    rockEmojis[Math.floor(Math.random() * rockEmojis.length)]
+                ));
+            }
+
+            // Sinh nấm rải rác
+            const numMushrooms = 80;
+            for (let i = 0; i < numMushrooms; i++) {
+                mushrooms.push({
+                    x: Math.random() * WORLD_WIDTH,
+                    y: Math.random() * WORLD_HEIGHT,
+                    emoji: '🍄',
+                    size: Math.random() * 15 + 15
+                });
+            }
+        }
+
+        // Hàm xử lý va chạm đẩy lùi thực thể khỏi núi đá
+        function resolveRockCollisions(entity) {
+            for (let r of rocks) {
+                let dx = entity.x - r.x;
+                let dy = entity.y - r.y;
+                let dist = Math.hypot(dx, dy);
+                let minDist = entity.radius + r.radius - 10; // Cho phép lấn vào viền đá một chút
+                
+                if (dist < minDist) {
+                    let overlap = minDist - dist;
+                    entity.x += (dx / dist) * overlap;
+                    entity.y += (dy / dist) * overlap;
+                }
+            }
+        }
+
+        // ---------------------------------------------------------
+        // BIẾN TOÀN CỤC TRÒ CHƠI
+        // ---------------------------------------------------------
+        let tiger;
+        let preys = [];
+        let hunters = [];
+        let bullets = [];
+        let particles = [];
+        let birds = [];
+        let butterflies = [];
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 1.0; // 100%
+                this.decay = Math.random() * 0.05 + 0.02;
+                this.size = Math.random() * 5 + 3;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw() {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function createExplosion(x, y, color, count) {
+            for(let i=0; i<count; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        // ---------------------------------------------------------
+        // NÚT ĐIỀU KHIỂN PAUSE / MUTE
+        // ---------------------------------------------------------
+        muteBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            muteBtn.innerText = isMuted ? '🔇' : '🔊';
+        });
+
+        function togglePause() {
+            if (!gameActive) return; // Không làm gì nếu game đang ở màn hình Game Over/Bắt đầu
+            isPaused = !isPaused;
+            if (isPaused) {
+                // Hiển thị màn hình Pause
+                pauseOverlay.classList.remove('hidden');
+                pauseOverlay.classList.add('flex');
+                pauseBtn.innerText = '▶️';
+            } else {
+                // Tiếp tục chơi
+                pauseOverlay.classList.add('hidden');
+                pauseOverlay.classList.remove('flex');
+                pauseBtn.innerText = '⏸️';
+                lastTime = performance.now(); // Reset lastTime để tránh game chạy nhanh giật cục sau khi mở lại
+            }
+        }
+
+        pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+
+        // ---------------------------------------------------------
+        // LOGIC TRÒ CHƠI
+        // ---------------------------------------------------------
+
+        function spawnHunter() {
+            // Sinh ra ở rìa màn hình gần hổ
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 800; // Xa ngoài màn hình
+            let sx = tiger.x + Math.cos(angle) * dist;
+            let sy = tiger.y + Math.sin(angle) * dist;
+            
+            // Ép vào trong map
+            sx = Math.max(50, Math.min(WORLD_WIDTH - 50, sx));
+            sy = Math.max(50, Math.min(WORLD_HEIGHT - 50, sy));
+            
+            hunters.push(new Hunter(sx, sy));
+        }
+
+        function checkCollisions() {
+            // Đạn trúng núi đá (hủy đạn)
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let bulletHitRock = false;
+                const b = bullets[i];
+                for (let r of rocks) {
+                    if (Math.hypot(b.x - r.x, b.y - r.y) < b.radius + r.radius - 10) {
+                        createExplosion(b.x, b.y, '#888888', 5); // Hiệu ứng bụi đá
+                        bullets.splice(i, 1);
+                        bulletHitRock = true;
+                        break;
+                    }
+                }
+                if (bulletHitRock) continue; // Bỏ qua xét va chạm đạn này với hổ nữa
+            }
+
+            // Hổ ăn mồi
+            for (let i = preys.length - 1; i >= 0; i--) {
+                const p = preys[i];
+                const dist = Math.hypot(tiger.x - p.x, tiger.y - p.y);
+                if (dist < tiger.radius + p.radius) {
+                    // Ăn thành công
+                    SoundManager.playBite(); // Phát tiếng cắn mồi
+                    score += p.points;
+                    scoreEl.innerText = score;
+                    createExplosion(p.x, p.y, '#ffea00', 10);
+                    preys.splice(i, 1);
+                    
+                    // Thêm mồi mới
+                    preys.push(new Prey());
+
+                    // Cập nhật level và thêm thợ săn
+                    let newLevel = Math.floor(score / 100) + 1;
+                    if (newLevel > level) {
+                        level = newLevel;
+                        levelEl.innerText = level;
+                        // Thêm thợ săn, tối đa 10
+                        if (hunters.length < 10) {
+                            spawnHunter();
+                        }
+                    }
+                }
+            }
+
+            // Hổ va chạm thợ săn
+            for (let h of hunters) {
+                const dist = Math.hypot(tiger.x - h.x, tiger.y - h.y);
+                if (dist < tiger.radius + h.radius - 10) {
+                    SoundManager.playTigerHit();
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Đạn trúng Hổ
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                const dist = Math.hypot(tiger.x - b.x, tiger.y - b.y);
+                if (dist < tiger.radius + b.radius) {
+                    SoundManager.playTigerHit();
+                    createExplosion(tiger.x, tiger.y, '#ff0000', 20);
+                    gameOver();
+                    return;
+                }
+            }
+        }
+
+        function initGame() {
+            tiger = new Tiger(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+            preys = [];
+            hunters = [];
+            bullets = [];
+            particles = [];
+            birds = [];
+            butterflies = [];
+            score = 0;
+            level = 1;
+            isPaused = false; // Reset trạng thái Pause
+            pauseOverlay.classList.add('hidden');
+            pauseOverlay.classList.remove('flex');
+            pauseBtn.innerText = '⏸️';
+
+            scoreEl.innerText = score;
+            levelEl.innerText = level;
+
+            generateEnvironment();
+
+            // Khởi tạo chim bay lượn trên cao
+            for(let i=0; i<15; i++) {
+                birds.push(new Bird());
+            }
+
+            // Khởi tạo đàn bướm bay lượn ở dưới
+            for(let i=0; i<30; i++) {
+                butterflies.push(new Butterfly());
+            }
+
+            // Khởi tạo 15 con mồi
+            for(let i=0; i<15; i++) {
+                preys.push(new Prey());
+            }
+
+            // Khởi tạo 1 thợ săn
+            spawnHunter();
+
+            gameActive = true;
+            lastTime = performance.now();
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+            
+            cancelAnimationFrame(animationId);
+            gameLoop(lastTime);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('chuaterungxanh_highscore', highScore);
+                highScoreEl.innerText = highScore;
+            }
+
+            // Hiển thị UI kết thúc
+            gameTitle.innerText = "GAME OVER!";
+            gameTitle.classList.remove('text-yellow-400');
+            gameTitle.classList.add('text-red-500');
+            
+            document.getElementById('game-message').classList.add('hidden');
+            document.getElementById('game-message-mobile').classList.add('hidden');
+            
+            finalScoreContainer.classList.remove('hidden');
+            finalScoreContainer.classList.add('flex');
+            finalScoreEl.innerText = score;
+
+            startBtn.innerText = "PLAY AGAIN";
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            joystickZone.style.display = 'none'; // Ẩn joystick
+        }
+
+        function drawBackground() {
+            // Vẽ nền xanh lưới (tùy chọn)
+            ctx.fillStyle = '#225a33'; // Nền rừng
+            ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+            
+            // Vẽ thác nước (Vẽ dưới cùng của mặt đất)
+            waterfalls.forEach(w => {
+                if (w.x > camera.x - 200 && w.x < camera.x + canvas.width + 200 &&
+                    w.y > camera.y - 200 && w.y < camera.y + canvas.height + 200) {
+                    w.draw();
+                }
+            });
+
+            // Vẽ cây nấm
+            mushrooms.forEach(m => {
+                if (m.x > camera.x - 50 && m.x < camera.x + canvas.width + 50 &&
+                    m.y > camera.y - 50 && m.y < camera.y + canvas.height + 50) {
+                    ctx.font = `${m.size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(m.emoji, m.x, m.y);
+                }
+            });
+
+            // Vẽ cây cối
+            trees.forEach(t => {
+                if (t.x > camera.x - 100 && t.x < camera.x + canvas.width + 100 &&
+                    t.y > camera.y - 100 && t.y < camera.y + canvas.height + 100) {
+                    ctx.font = `${t.size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(t.emoji, t.x, t.y);
+                }
+            });
+
+            // Vẽ núi đá (Chỉ vẽ khi nằm trong góc quay camera)
+            rocks.forEach(r => {
+                if (r.x > camera.x - 100 && r.x < camera.x + canvas.width + 100 &&
+                    r.y > camera.y - 100 && r.y < camera.y + canvas.height + 100) {
+                    r.draw();
+                }
+            });
+
+            // Vẽ viền thế giới
+            ctx.strokeStyle = '#11301a';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        }
+
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+
+            // Xử lý khi game bị Tạm Dừng
+            if (isPaused) {
+                lastTime = timestamp; // Cập nhật thời gian liên tục nhưng không chạy logic game
+                animationId = requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            // Tính Delta time (thời gian giữa các frame)
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            // Dọn dẹp Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Cập nhật thực thể
+            tiger.update(dt);
+            preys.forEach(p => p.update(dt, tiger));
+            hunters.forEach(h => h.update(dt, tiger));
+            birds.forEach(b => b.update(dt)); // Cập nhật chim bay
+            butterflies.forEach(b => b.update(dt)); // Cập nhật bướm bay
+            
+            // Xử lý thực thể va chạm với núi đá (Không được đi xuyên núi)
+            resolveRockCollisions(tiger);
+            preys.forEach(p => resolveRockCollisions(p));
+            hunters.forEach(h => resolveRockCollisions(h));
+
+            // Cập nhật và xóa đạn
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].update(dt);
+                if (bullets[i].isOutOfBounds()) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Cập nhật hạt
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            checkCollisions();
+
+            if (!gameActive) return; // Nếu chết sau va chạm thì dừng vẽ frame tiếp
+
+            // --- QUẢN LÝ CAMERA ---
+            // Đặt camera tập trung vào hổ
+            camera.x = tiger.x - canvas.width / 2;
+            camera.y = tiger.y - canvas.height / 2;
+
+            // Giới hạn camera không vượt quá thế giới
+            camera.x = Math.max(0, Math.min(WORLD_WIDTH - canvas.width, camera.x));
+            camera.y = Math.max(0, Math.min(WORLD_HEIGHT - canvas.height, camera.y));
+
+            // Bắt đầu vẽ với camera offset
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            // Vẽ thế giới
+            drawBackground();
+
+            // Sắp xếp các thực thể theo trục Y để vẽ chồng lên nhau cho hiệu ứng chiều sâu (Z-index)
+            const renderList = [tiger, ...preys, ...hunters];
+            renderList.sort((a, b) => a.y - b.y);
+
+            // Vẽ các thực thể
+            renderList.forEach(e => e.draw());
+            
+            // Vẽ đạn và hạt nổi bật lên trên
+            bullets.forEach(b => b.draw());
+            particles.forEach(p => p.draw());
+
+            // Vẽ chim và bướm ở lớp cao nhất (bay trên không)
+            birds.forEach(b => b.draw());
+            butterflies.forEach(b => b.draw());
+
+            ctx.restore(); // Phục hồi trạng thái canvas (bỏ translate)
+
+            // Vòng lặp
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // Sự kiện nút Bắt đầu
+        startBtn.addEventListener('click', () => {
+            SoundManager.init(); // Khởi tạo âm thanh khi người dùng nhấn nút
+            initGame();
+            // Khôi phục hiển thị joystick trên thiết bị chạm
+            if (window.innerWidth <= 768 || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+                joystickZone.style.display = 'block';
+            }
+        });
+
+        // Vẽ màn hình nền đằng sau mờ mờ lúc mới vào
+        generateEnvironment();
+        tiger = new Tiger(WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+        camera.x = tiger.x - canvas.width / 2;
+        camera.y = tiger.y - canvas.height / 2;
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+        drawBackground();
+        tiger.draw();
+        ctx.restore();
+
+    </script>
+</body>
+</html>

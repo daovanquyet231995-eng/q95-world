@@ -4,123 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>q95.world - Game Portal</title>
-    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #0f172a; 
-            color: #f8fafc;
-        }
-        .game-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.3);
-        }
-        .play-btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        }
-        #install-app-btn {
-            animation: pulse 2s infinite;
-            display: none; /* Ẩn nút đi cho đến khi điện thoại cho phép tải */
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .game-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .game-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.3); }
+        .play-btn { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
     </style>
 </head>
 <body class="min-h-screen pb-10">
-
-    <nav class="bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-3xl">🎮</span>
-                <h1 class="text-xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-                    Q95.WORLD
-                </h1>
-            </div>
-            <button id="install-app-btn" class="bg-white/10 hover:bg-white/20 text-sm font-bold py-2 px-4 rounded-full transition-colors items-center gap-2">
-                <span>📱</span> Install App
-            </button>
-        </div>
-    </nav>
-
     <main class="max-w-6xl mx-auto px-4 mt-8">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-extrabold">Featured Games 🔥</h2>
-        </div>
-
+        <h2 class="text-2xl font-extrabold mb-6">Featured Games 🔥</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            
+            <!-- 7 GAME ĐÃ CÓ -->
+            <a href="piggy-feast/index.html" class="block"><div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 h-full flex flex-col"><img src="icon-piggy.jpg" class="w-full aspect-square object-cover rounded-2xl mb-4 bg-slate-900"><h3 class="font-bold text-lg mb-1">Piggy Feast</h3><div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white">Play Now</div></div></a>
+            
+            <a href="jumping-moon/index.html" class="block"><div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 h-full flex flex-col"><img src="icon-moon.jpg" class="w-full aspect-square object-cover rounded-2xl mb-4 bg-slate-900"><h3 class="font-bold text-lg mb-1">Jumping Moon</h3><div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white">Play Now</div></div></a>
+            
+            <a href="space-craft/index.html" class="block"><div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 h-full flex flex-col"><img src="icon-craft.jpg" class="w-full aspect-square object-cover rounded-2xl mb-4 bg-slate-900"><h3 class="font-bold text-lg mb-1">Space Craft</h3><div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white">Play Now</div></div></a>
+            
+            <a href="lord-of-the-green-forest/index.html" class="block"><div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 h-full flex flex-col"><img src="icon-forest.jpg" class="w-full aspect-square object-cover rounded-2xl mb-4 bg-slate-900"><h3 class="font-bold text-lg mb-1">Lord of Forest</h3><div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">Play Now</div></div></a>
+            
+            <a href="survival-boy/index.html" class="block"><div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 h-full flex flex-col"><img src="icon-survival.jpg" class="w-full aspect-square object-cover rounded-2xl mb-4 bg-slate-900"><h3 class="font-bold text-lg mb-1">Survival Boy</h3><div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">Play Now</div></div></a>
+            
+            <a href="bank-robbery/index.html" class="block"><div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 h-full flex flex-col"><img src="icon-robbery.jpg" class="w-full aspect-square object-cover rounded-2xl mb-4 bg-slate-900"><h3 class="font-bold text-lg mb-1">Bank Robbery</h3><div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white" style="background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);">Play Now</div></div></a>
 
-            <a href="piggy-feast/index.html" class="block">
-                <div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 relative overflow-hidden h-full flex flex-col">
-                    <img src="icon-piggy.jpg" alt="Piggy Feast" class="w-full aspect-square object-cover rounded-2xl mb-4 shadow-inner border border-slate-700 bg-slate-900">
-                    <h3 class="font-bold text-lg mb-1 line-clamp-1">Piggy Feast</h3>
-                    <p class="text-slate-400 text-xs mb-4 line-clamp-2">Dodge obstacles, eat food to survive!</p>
-                    <div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white shadow-lg shadow-blue-500/30">
-                        Play Now
-                    </div>
-                </div>
-            </a>
+            <a href="chaotic-universe/index.html" class="block"><div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 h-full flex flex-col"><img src="icon-chaotic.jpg" class="w-full aspect-square object-cover rounded-2xl mb-4 bg-slate-900"><h3 class="font-bold text-lg mb-1">Chaotic Universe</h3><div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">Play Now</div></div></a>
 
-            <a href="jumping-moon/index.html" class="block">
-                <div class="game-card bg-slate-800 rounded-3xl p-4 border border-slate-700 relative overflow-hidden h-full flex flex-col">
-                    <img src="icon-moon.jpg" alt="Jumping Moon" class="w-full aspect-square object-cover rounded-2xl mb-4 shadow-inner border border-slate-700 bg-slate-900">
-                    <h3 class="font-bold text-lg mb-1 line-clamp-1">Jumping Moon</h3>
-                    <p class="text-slate-400 text-xs mb-4 line-clamp-2">Touch to jump and conquer the night sky.</p>
-                    <div class="mt-auto play-btn text-center py-2.5 rounded-xl font-bold text-sm text-white shadow-lg shadow-blue-500/30">
-                        Play Now
-                    </div>
-                </div>
-            </a>
-
+            <!-- 13 Ô TRỐNG -->
             <script>
-                for(let i=0; i<18; i++) {
-                    document.write(`
-                    <div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 relative overflow-hidden h-full flex flex-col opacity-60 grayscale cursor-not-allowed">
-                        <div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl shadow-inner text-slate-500">?</div>
-                        <h3 class="font-bold text-lg mb-1">Secret Project</h3>
-                        <p class="text-slate-400 text-xs mb-4">In development...</p>
-                        <div class="mt-auto bg-slate-700 text-center py-2.5 rounded-xl font-bold text-sm text-slate-400">Coming Soon</div>
-                    </div>
-                    `);
+                for(let i=0; i<13; i++) {
+                    document.write(`<div class="game-card bg-slate-800/50 rounded-3xl p-4 border border-slate-700/50 opacity-60 flex flex-col"><div class="w-full aspect-square bg-slate-700 rounded-2xl mb-4 flex items-center justify-center text-4xl text-slate-500">?</div><h3 class="font-bold text-lg mb-1">Coming Soon</h3><p class="text-slate-400 text-xs mb-4">In development...</p></div>`);
                 }
             </script>
-
         </div>
     </main>
-
-    <script>
-        // Đăng ký Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-
-        let deferredPrompt;
-        const installBtn = document.getElementById('install-app-btn');
-
-        // Bắt sự kiện khi điện thoại sẵn sàng cho phép cài đặt
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'flex'; // Hiện nút lên
-        });
-
-        // Xử lý khi bấm nút Install
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBtn.style.display = 'none';
-                }
-                deferredPrompt = null;
-            }
-        });
-    </script>
 </body>
 </html>

@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Survival Boy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #030712; /* Đổi nền thành màu đen nhựa đường */
+            touch-action: none; /* Prevent scroll on mobile */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        .neon-text {
+            text-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8, 0 0 30px #38bdf8;
+        }
+        .neon-text-red {
+            text-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444, 0 0 30px #ef4444;
+        }
+        .neon-text-green {
+            text-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e, 0 0 30px #22c55e;
+        }
+        .neon-btn {
+            box-shadow: 0 0 10px #38bdf8;
+            transition: all 0.2s ease;
+        }
+        .neon-btn:hover {
+            box-shadow: 0 0 20px #38bdf8, 0 0 30px #38bdf8;
+            transform: scale(1.05);
+        }
+        .neon-btn-red {
+            box-shadow: 0 0 10px #ef4444;
+            transition: all 0.2s ease;
+        }
+        .neon-btn-red:hover {
+            box-shadow: 0 0 20px #ef4444, 0 0 30px #ef4444;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between">
+        
+        <!-- HUD -->
+        <div id="hud" class="p-4 flex justify-between items-start hidden">
+            <div>
+                <p class="text-xl font-bold text-sky-400">Score: <span id="scoreVal">0</span></p>
+                <p class="text-sm text-gray-400">High Score: <span id="highScoreVal">0</span></p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <div id="powerup-timer" class="hidden text-yellow-400 font-bold text-lg animate-pulse">
+                    Invincible: <span id="timerVal">5</span>s
+                </div>
+                <!-- Controls -->
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="mute-btn" class="p-2 bg-slate-800/80 text-white rounded-lg hover:bg-slate-700 backdrop-blur border border-slate-600" title="Mute/Unmute (M)">🔊</button>
+                    <button id="pause-btn" class="p-2 bg-slate-800/80 text-white rounded-lg hover:bg-slate-700 backdrop-blur border border-slate-600" title="Pause (P)">⏸</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto hidden z-50">
+            <h1 class="text-6xl font-black mb-8 text-white tracking-widest neon-text">PAUSED</h1>
+            <button id="resume-btn" class="px-8 py-3 bg-green-500 text-white font-bold rounded-full neon-btn text-xl">
+                Resume (P)
+            </button>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-indigo-950/80 backdrop-blur-sm pointer-events-auto">
+            <h1 class="text-5xl font-black mb-2 text-sky-400 neon-text text-center">Survival<br><span class="text-green-400 neon-text-green">Boy</span></h1>
+            <div class="mb-8 mt-4 bg-black/40 p-6 rounded-2xl border border-indigo-500/30 text-gray-200 max-w-md w-[90%]">
+                <p class="text-center mb-4">
+                    Control the survivor using <b>WASD / Arrows</b> or <b>Touch & Drag</b> on the screen.<br>
+                </p>
+                <ul class="space-y-2 text-sm sm:text-base">
+                    <li>🧟 <b class="text-green-400">Flee:</b> Don't let the zombies catch you!</li>
+                    <li>🍕 <b class="text-orange-400">Supply:</b> Pick up pizza slices to survive (+10 pts).</li>
+                    <li>⭐ <b class="text-yellow-400">Star:</b> Become invincible and knock away zombies (+50 pts).</li>
+                    <li>🚗 <b class="text-blue-400">Evade:</b> Use cars on the road to block and dodge zombies.</li>
+                </ul>
+            </div>
+            <button id="start-btn" class="px-8 py-3 bg-sky-500 text-white font-bold rounded-full neon-btn text-xl">
+                Start Survival
+            </button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 backdrop-blur-md pointer-events-auto hidden z-40">
+            <h1 class="text-6xl font-black mb-4 text-red-500 neon-text-red">YOU DIED!</h1>
+            <p class="text-2xl mb-2">Survival Score: <span id="finalScore" class="font-bold text-sky-400">0</span></p>
+            <p id="new-highscore-msg" class="text-yellow-400 font-bold text-xl mb-4 animate-bounce hidden">🎉 NEW HIGH SCORE! 🎉</p>
+            <p class="mb-8 text-gray-400">The zombie horde overwhelmed you...</p>
+            <button id="restart-btn" class="px-8 py-3 bg-red-500 text-white font-bold rounded-full neon-btn-red text-xl">
+                Try Again
+            </button>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // UI Elements
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const hud = document.getElementById('hud');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const scoreEl = document.getElementById('scoreVal');
+    const highScoreEl = document.getElementById('highScoreVal');
+    const finalScoreEl = document.getElementById('finalScore');
+    const powerupTimerEl = document.getElementById('powerup-timer');
+    const timerValEl = document.getElementById('timerVal');
+    const pauseScreen = document.getElementById('pause-screen');
+    const muteBtn = document.getElementById('mute-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const resumeBtn = document.getElementById('resume-btn');
+
+    // Audio Context (Synthesizer)
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    let isMuted = false;
+    let isPaused = false;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+        if (isMuted || !audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        const now = audioCtx.currentTime;
+        
+        if (type === 'eat') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'powerup') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'hit') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'die') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(10, now + 0.8);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+            osc.start(now);
+            osc.stop(now + 0.8);
+        } else if (type === 'step') {
+            // Tiếng bước chân (low thud)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.05);
+            gainNode.gain.setValueAtTime(0.05, now); // Âm lượng nhỏ gọn
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.start(now);
+            osc.stop(now + 0.05);
+        }
+    }
+
+    // Resize canvas
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Game Variables
+    let animationId;
+    let score = 0;
+    let highScore = localStorage.getItem('sinhTonHighScore') || 0;
+    highScoreEl.innerText = highScore;
+    let frameCount = 0;
+    let gameActive = false;
+    let difficultyMultiplier = 1;
+    let screenShake = 0;
+    let camera = { x: 0, y: 0 };
+
+    // Entities
+    let player;
+    let enemies = [];
+    let items = [];
+    let particles = [];
+    let cars = []; // Thêm mảng chứa ô tô
+
+    // Input Handling
+    const keys = {
+        w: false, a: false, s: false, d: false,
+        ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false
+    };
+
+    window.addEventListener('keydown', (e) => {
+        if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
+        if(e.key.toLowerCase() === 'p' || e.key === 'Escape') togglePause();
+        if(e.key.toLowerCase() === 'm') toggleMute();
+    });
+    window.addEventListener('keyup', (e) => {
+        if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
+    });
+
+    function togglePause() {
+        if (!gameActive) return;
+        isPaused = !isPaused;
+        if (isPaused) {
+            pauseScreen.classList.remove('hidden');
+            cancelAnimationFrame(animationId);
+        } else {
+            pauseScreen.classList.add('hidden');
+            animate();
+        }
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        muteBtn.innerText = isMuted ? '🔇' : '🔊';
+        if (!isMuted) initAudio();
+    }
+
+    muteBtn.addEventListener('click', toggleMute);
+    pauseBtn.addEventListener('click', togglePause);
+    resumeBtn.addEventListener('click', togglePause);
+
+    // Touch / Joystick Handling
+    let joystick = {
+        active: false,
+        originX: 0,
+        originY: 0,
+        x: 0,
+        y: 0,
+        angle: 0,
+        force: 0,
+        maxRadius: 50
+    };
+
+    canvas.addEventListener('touchstart', (e) => {
+        if (!gameActive) return;
+        const touch = e.touches[0];
+        joystick.active = true;
+        joystick.originX = touch.clientX;
+        joystick.originY = touch.clientY;
+        joystick.x = touch.clientX;
+        joystick.y = touch.clientY;
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (!gameActive || !joystick.active) return;
+        const touch = e.touches[0];
+        joystick.x = touch.clientX;
+        joystick.y = touch.clientY;
+        
+        let dx = joystick.x - joystick.originX;
+        let dy = joystick.y - joystick.originY;
+        let distance = Math.hypot(dx, dy);
+        
+        joystick.angle = Math.atan2(dy, dx);
+        joystick.force = Math.min(distance / joystick.maxRadius, 1);
+    });
+
+    canvas.addEventListener('touchend', () => {
+        joystick.active = false;
+        joystick.force = 0;
+    });
+
+    // Helper function: Xử lý va chạm hình tròn (nhân vật) và hình chữ nhật (ô tô)
+    function resolveCollision(circle, rect) {
+        let closestX = Math.max(rect.x, Math.min(circle.x, rect.x + rect.width));
+        let closestY = Math.max(rect.y, Math.min(circle.y, rect.y + rect.height));
+
+        let distanceX = circle.x - closestX;
+        let distanceY = circle.y - closestY;
+        let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+        if (distanceSquared < (circle.radius * circle.radius)) {
+            let distance = Math.sqrt(distanceSquared);
+            if (distance === 0) {
+                distanceX = 0;
+                distanceY = -1;
+                distance = 1;
+            }
+            let overlap = circle.radius - distance;
+            circle.x += (distanceX / distance) * overlap;
+            circle.y += (distanceY / distance) * overlap;
+        }
+    }
+
+    // Classes
+    class Car {
+        constructor(x, y, isVertical) {
+            this.x = x;
+            this.y = y;
+            this.isVertical = isVertical;
+            this.width = isVertical ? 60 : 120;
+            this.height = isVertical ? 120 : 60;
+            const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#6b7280', '#ec4899'];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            
+            // Đổ bóng xe
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(8, 8, this.width, this.height);
+            
+            // Thân xe
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, this.width, this.height, 12);
+            ctx.fill();
+
+            // Nóc xe / Kính xe tối màu
+            ctx.fillStyle = '#1e293b'; 
+            let roofW = this.isVertical ? this.width - 16 : this.width - 30;
+            let roofH = this.isVertical ? this.height - 30 : this.height - 16;
+            let roofX = (this.width - roofW) / 2;
+            let roofY = (this.height - roofH) / 2;
+            ctx.beginPath();
+            ctx.roundRect(roofX, roofY, roofW, roofH, 6);
+            ctx.fill();
+
+            // Kính chắn gió phản chiếu ánh sáng
+            ctx.fillStyle = '#38bdf8';
+            if (this.isVertical) {
+                ctx.fillRect(roofX + 4, roofY - 6, roofW - 8, 6); // Kính trước
+                ctx.fillRect(roofX + 4, roofY + roofH, roofW - 8, 4); // Kính sau
+            } else {
+                ctx.fillRect(roofX - 6, roofY + 4, 6, roofH - 8); // Kính trước
+                ctx.fillRect(roofX + roofW, roofY + 4, 4, roofH - 8); // Kính sau
+            }
+            
+            ctx.restore();
+        }
+    }
+
+    class Player {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 16;
+            this.baseSpeed = 5;
+            this.speed = this.baseSpeed;
+            this.angle = 0; // Hướng xoay của người
+            
+            this.isInvincible = false;
+            this.invincibleTimer = 0;
+            this.stepTimer = 0; // Bộ đếm nhịp bước chân
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            
+            // Vẽ hào quang nếu đang bất tử
+            if (this.isInvincible) {
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius + 10 + Math.sin(frameCount * 0.2) * 5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(253, 224, 71, 0.3)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(253, 224, 71, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            ctx.rotate(this.angle);
+
+            // Vẽ Người (Top-down view)
+            const shirtColor = this.isInvincible ? '#facc15' : '#3b82f6'; // Áo xanh hoặc vàng
+            const skinColor = '#fcd34d'; // Màu da
+
+            // Vai / Thân
+            ctx.fillStyle = shirtColor;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.radius * 0.8, this.radius, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hai tay (nắm đấm)
+            ctx.fillStyle = skinColor;
+            ctx.beginPath();
+            // Tay trái
+            ctx.arc(this.radius * 0.7, -this.radius * 0.9, this.radius * 0.3, 0, Math.PI * 2);
+            // Tay phải
+            ctx.arc(this.radius * 0.7, this.radius * 0.9, this.radius * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Đầu
+            ctx.fillStyle = skinColor;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tóc (tùy chọn cho sinh động)
+            ctx.fillStyle = '#451a03'; // Tóc nâu đậm
+            ctx.beginPath();
+            ctx.arc(-this.radius * 0.2, 0, this.radius * 0.7, Math.PI / 2, Math.PI * 1.5);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        update() {
+            let dx = 0;
+            let dy = 0;
+            let isMoving = false;
+
+            // Keyboard input
+            if (keys.w || keys.ArrowUp) dy -= 1;
+            if (keys.s || keys.ArrowDown) dy += 1;
+            if (keys.a || keys.ArrowLeft) dx -= 1;
+            if (keys.d || keys.ArrowRight) dx += 1;
+
+            if (dx !== 0 || dy !== 0) {
+                // Normalize for keyboard
+                let length = Math.hypot(dx, dy);
+                dx /= length;
+                dy /= length;
+                this.x += dx * this.speed;
+                this.y += dy * this.speed;
+                this.angle = Math.atan2(dy, dx); // Cập nhật góc quay
+                isMoving = true;
+            } else if (joystick.active && joystick.force > 0) {
+                // Joystick input
+                this.x += Math.cos(joystick.angle) * this.speed * joystick.force;
+                this.y += Math.sin(joystick.angle) * this.speed * joystick.force;
+                this.angle = joystick.angle; // Cập nhật góc quay
+                isMoving = true;
+            }
+
+            // Phát tiếng bước chân khi di chuyển
+            if (isMoving) {
+                this.stepTimer++;
+                let stepInterval = this.isInvincible ? 10 : 16; // Nhịp độ: Chạy nhanh bước nhanh
+                if (this.stepTimer >= stepInterval) {
+                    playSound('step');
+                    this.stepTimer = 0;
+                }
+            } else {
+                this.stepTimer = 0; // Đứng yên thì reset nhịp
+            }
+
+            // Xử lý va chạm với xe ô tô (Vật cản)
+            cars.forEach(car => resolveCollision(this, car));
+
+            // Powerup Logic
+            if (this.isInvincible) {
+                this.invincibleTimer--;
+                timerValEl.innerText = Math.ceil(this.invincibleTimer / 60);
+                
+                // Add trail particle
+                if (frameCount % 3 === 0) {
+                    particles.push(new Particle(this.x, this.y, this.radius * 0.6, '#fde047', {x: 0, y: 0}));
+                }
+
+                if (this.invincibleTimer <= 0) {
+                    this.isInvincible = false;
+                    this.speed = this.baseSpeed;
+                    powerupTimerEl.classList.add('hidden');
+                }
+            }
+        }
+
+        activatePowerup() {
+            this.isInvincible = true;
+            this.invincibleTimer = 300; // 5 seconds at 60fps
+            this.speed = this.baseSpeed * 1.5; // Chạy nhanh hơn
+            powerupTimerEl.classList.remove('hidden');
+        }
+    }
+
+    class Enemy {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 14 + Math.random() * 6; // Kích thước ma đa dạng
+            this.baseSpeed = (1.5 + Math.random() * 1.5) * difficultyMultiplier; // Ma chạy nhanh hơn xíu
+            this.angle = 0;
+            this.wobbleOffset = Math.random() * Math.PI * 2; // Độ lệch để tay đung đưa
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
+
+            // Vẽ Ma ăn thịt (Zombie - Top-down)
+            const bodyColor = '#166534'; // Xanh thẫm (áo rách)
+            const skinColor = '#22c55e'; // Xanh lá mạ (da ma quỷ)
+            const eyeColor = '#ef4444'; // Mắt đỏ
+
+            // Vai / Thân
+            ctx.fillStyle = bodyColor;
+            ctx.beginPath();
+            ctx.ellipse(-this.radius * 0.2, 0, this.radius * 0.7, this.radius, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hai tay vươn về phía trước (có đung đưa nhẹ khi chạy)
+            const armReach = this.radius * 1.2 + Math.sin(frameCount * 0.15 + this.wobbleOffset) * 3;
+            
+            ctx.fillStyle = skinColor;
+            ctx.beginPath();
+            // Tay trái
+            ctx.roundRect(0, -this.radius * 0.9, armReach, this.radius * 0.4, 3);
+            // Tay phải
+            ctx.roundRect(0, this.radius * 0.5, armReach, this.radius * 0.4, 3);
+            ctx.fill();
+
+            // Đầu zombie
+            ctx.fillStyle = skinColor;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius * 0.75, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mắt đỏ phát sáng
+            ctx.fillStyle = eyeColor;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = eyeColor;
+            ctx.beginPath();
+            ctx.arc(this.radius * 0.3, -this.radius * 0.3, this.radius * 0.15, 0, Math.PI * 2); // Mắt trái
+            ctx.arc(this.radius * 0.3, this.radius * 0.3, this.radius * 0.15, 0, Math.PI * 2);  // Mắt phải
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+
+            ctx.restore();
+        }
+
+        update() {
+            // Hướng mắt về người chơi
+            this.angle = Math.atan2(player.y - this.y, player.x - this.x);
+            
+            // Tiến lên phía trước
+            this.x += Math.cos(this.angle) * this.baseSpeed;
+            this.y += Math.sin(this.angle) * this.baseSpeed;
+
+            // Zombie cũng bị kẹt bởi ô tô (giúp người chơi chạy vòng quanh)
+            cars.forEach(car => resolveCollision(this, car));
+        }
+    }
+
+    class Item {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type; // 'score' or 'powerup'
+            this.radius = type === 'powerup' ? 12 : 12; // Chỉnh pizza to ra cho dễ nhìn
+            this.color = type === 'powerup' ? '#facc15' : '#fef08a'; // yellow-400 or yellow-200
+            this.bobOffset = Math.random() * Math.PI * 2;
+        }
+
+        draw() {
+            const currentY = this.y + Math.sin(frameCount * 0.1 + this.bobOffset) * 5;
+            
+            ctx.beginPath();
+            if (this.type === 'powerup') {
+                // Draw Star
+                let rot = Math.PI / 2 * 3;
+                let step = Math.PI / 5;
+                ctx.moveTo(this.x, currentY - this.radius);
+                for (let i = 0; i < 5; i++) {
+                    let px = this.x + Math.cos(rot) * this.radius;
+                    let py = currentY + Math.sin(rot) * this.radius;
+                    ctx.lineTo(px, py);
+                    rot += step;
+                    px = this.x + Math.cos(rot) * (this.radius * 0.4);
+                    py = currentY + Math.sin(rot) * (this.radius * 0.4);
+                    ctx.lineTo(px, py);
+                    rot += step;
+                }
+                ctx.closePath();
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+            } else {
+                // Vẽ Miếng Pizza
+                ctx.save();
+                ctx.translate(this.x, currentY);
+                ctx.rotate(this.bobOffset); // Xoay mỗi miếng pizza một góc ngẫu nhiên tĩnh để tự nhiên hơn
+
+                // Đế bánh (Crust)
+                ctx.fillStyle = '#d97706'; // Nâu cam
+                ctx.beginPath();
+                ctx.moveTo(-this.radius, -this.radius);
+                ctx.quadraticCurveTo(0, -this.radius - 5, this.radius, -this.radius);
+                ctx.lineTo(0, this.radius);
+                ctx.fill();
+
+                // Lớp Phô mai
+                ctx.fillStyle = '#fef08a'; // Vàng nhạt
+                ctx.beginPath();
+                ctx.moveTo(-this.radius + 2, -this.radius + 2);
+                ctx.quadraticCurveTo(0, -this.radius - 2, this.radius - 2, -this.radius + 2);
+                ctx.lineTo(0, this.radius - 1);
+                ctx.fill();
+
+                // Xúc xích (Pepperoni)
+                ctx.fillStyle = '#ef4444'; // Đỏ
+                ctx.beginPath();
+                ctx.arc(0, -this.radius / 2 + 1, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(-this.radius / 2.5, 0, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.radius / 3, this.radius / 3, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    class Particle {
+        constructor(x, y, radius, color, velocity) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.color = color;
+            this.velocity = velocity;
+            this.alpha = 1;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.alpha;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        update() {
+            this.draw();
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.alpha -= 0.02; // phai dần
+        }
+    }
+
+    // Helper functions
+    function spawnEnemy() {
+        let x, y;
+        const margin = 50;
+        if (Math.random() < 0.5) {
+            x = Math.random() < 0.5 ? camera.x - margin : camera.x + canvas.width + margin;
+            y = camera.y + Math.random() * canvas.height;
+        } else {
+            x = camera.x + Math.random() * canvas.width;
+            y = Math.random() < 0.5 ? camera.y - margin : camera.y + canvas.height + margin;
+        }
+        enemies.push(new Enemy(x, y));
+    }
+
+    function spawnItem() {
+        // Random xung quanh người chơi
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 300 + Math.random() * 800;
+        const x = player.x + Math.cos(angle) * distance;
+        const y = player.y + Math.sin(angle) * distance;
+        const type = Math.random() < 0.1 ? 'powerup' : 'score';
+        
+        if (items.length < 30) {
+            items.push(new Item(x, y, type));
+        }
+    }
+
+    function spawnCar() {
+        // Sinh ô tô ngẫu nhiên ngoài rìa màn hình
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 500 + Math.random() * 700; 
+        const x = player.x + Math.cos(angle) * distance;
+        const y = player.y + Math.sin(angle) * distance;
+        const isVertical = Math.random() < 0.5;
+        
+        // Giới hạn số lượng xe để không nặng máy
+        if (cars.length < 25) {
+            cars.push(new Car(x, y, isVertical));
+        }
+    }
+
+    function createExplosion(x, y, color, count = 15) {
+        for (let i = 0; i < count; i++) {
+            particles.push(new Particle(
+                x, y, 
+                Math.random() * 4 + 1, 
+                color, 
+                {
+                    x: (Math.random() - 0.5) * (Math.random() * 10),
+                    y: (Math.random() - 0.5) * (Math.random() * 10)
+                }
+            ));
+        }
+    }
+
+    // Main Game Loop
+    function init() {
+        initAudio(); // Initialize audio on user interaction
+        player = new Player(canvas.width / 2, canvas.height / 2);
+        camera = { x: 0, y: 0 };
+        enemies = [];
+        items = [];
+        particles = [];
+        cars = [];
+        score = 0;
+        scoreEl.innerText = score;
+        frameCount = 0;
+        difficultyMultiplier = 1;
+        screenShake = 0;
+        gameActive = true;
+        
+        // Hide UIs
+        startScreen.classList.add('hidden');
+        gameOverScreen.classList.add('hidden');
+        hud.classList.remove('hidden');
+        powerupTimerEl.classList.add('hidden');
+        
+        // Initial spawns
+        for(let i=0; i<5; i++) spawnItem();
+        for(let i=0; i<12; i++) spawnCar();
+        
+        animate();
+    }
+
+    function drawJoystick() {
+        if (!joystick.active) return;
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        
+        // Base
+        ctx.beginPath();
+        ctx.arc(joystick.originX, joystick.originY, joystick.maxRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        
+        // Knob
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        let knobX = joystick.originX + Math.cos(joystick.angle) * joystick.force * joystick.maxRadius;
+        let knobY = joystick.originY + Math.sin(joystick.angle) * joystick.force * joystick.maxRadius;
+        ctx.arc(knobX, knobY, 20, 0, Math.PI * 2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    function drawCity() {
+        ctx.save();
+        const blockSize = 800; // Kích thước 1 khu phố
+        const roadWidth = 250; // Độ rộng đường nhựa
+        const buildSize = blockSize - roadWidth; // Kích thước vỉa hè / nền tòa nhà
+
+        const startX = Math.floor(camera.x / blockSize) - 1;
+        const endX = Math.floor((camera.x + canvas.width) / blockSize) + 1;
+        const startY = Math.floor(camera.y / blockSize) - 1;
+        const endY = Math.floor((camera.y + canvas.height) / blockSize) + 1;
+
+        for (let x = startX; x <= endX; x++) {
+            for (let y = startY; y <= endY; y++) {
+                let bx = x * blockSize;
+                let by = y * blockSize;
+                
+                // 1. Vẽ nền bê tông (vỉa hè / khu nhà)
+                ctx.fillStyle = '#111827'; 
+                ctx.fillRect(bx, by, buildSize, buildSize);
+                
+                // Viền bó vỉa hè
+                ctx.strokeStyle = '#1f2937'; 
+                ctx.lineWidth = 6;
+                ctx.strokeRect(bx, by, buildSize, buildSize);
+
+                // Chi tiết trang trí trên vỉa hè
+                let hash = Math.abs(Math.sin(x * 2.9898 + y * 7.233) * 43758.5453);
+                if (hash > 0.4) {
+                    ctx.fillStyle = '#1f2937';
+                    ctx.fillRect(bx + 50, by + 50, 120, 120); // Một khối kiến trúc
+                }
+                if (hash > 0.7) {
+                    // Ánh sáng neon phản chiếu dưới đất tạo cảm giác Cyberpunk/Kinh dị
+                    ctx.fillStyle = '#ef4444';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#ef4444';
+                    ctx.fillRect(bx + buildSize - 60, by + 40, 20, 5);
+                    ctx.shadowBlur = 0;
+                }
+                
+                // 2. Vẽ vạch kẻ đường (vàng đứt đoạn giữa đường)
+                ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)'; // Vàng mờ
+                ctx.lineWidth = 4;
+                ctx.setLineDash([30, 30]);
+                
+                // Vạch dọc
+                ctx.beginPath();
+                ctx.moveTo(bx + buildSize + roadWidth/2, by);
+                ctx.lineTo(bx + buildSize + roadWidth/2, by + buildSize);
+                ctx.stroke();
+
+                // Vạch ngang
+                ctx.beginPath();
+                ctx.moveTo(bx, by + buildSize + roadWidth/2);
+                ctx.lineTo(bx + buildSize, by + buildSize + roadWidth/2);
+                ctx.stroke();
+                
+                ctx.setLineDash([]); // Xóa thiết lập đứt đoạn
+                
+                // 3. Vạch sang đường (Zebra crosswalk) ở ngã tư
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                for(let i=0; i<6; i++) {
+                    // Vạch ngang
+                    ctx.fillRect(bx + buildSize + 15, by + buildSize - 80 + i*14, roadWidth - 30, 8);
+                    ctx.fillRect(bx + buildSize + 15, by + 10 + i*14, roadWidth - 30, 8);
+                    // Vạch dọc
+                    ctx.fillRect(bx + buildSize - 80 + i*14, by + buildSize + 15, 8, roadWidth - 30);
+                    ctx.fillRect(bx + 10 + i*14, by + buildSize + 15, 8, roadWidth - 30);
+                }
+            }
+        }
+        ctx.restore();
+    }
+
+    function animate() {
+        if (!gameActive || isPaused) return;
+        animationId = requestAnimationFrame(animate);
+        
+        // Xóa nền bằng màu nhựa đường tối
+        ctx.fillStyle = '#030712'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Tính toán vị trí Camera để luôn ở giữa người chơi
+        camera.x = player.x - canvas.width / 2;
+        camera.y = player.y - canvas.height / 2;
+
+        // Bắt đầu dịch chuyển khung nhìn (camera theo người chơi)
+        ctx.save();
+        let shakeX = 0, shakeY = 0;
+        if (screenShake > 0) {
+            shakeX = (Math.random() - 0.5) * screenShake;
+            shakeY = (Math.random() - 0.5) * screenShake;
+            screenShake -= 1;
+        }
+        
+        ctx.translate(-camera.x + shakeX, -camera.y + shakeY);
+
+        // Vẽ bối cảnh thành phố
+        drawCity();
+
+        frameCount++;
+
+        // Increase Difficulty
+        if (frameCount % 600 === 0) { // Mỗi 10 giây
+            difficultyMultiplier += 0.1;
+        }
+
+        // Dọn dẹp ô tô quá xa người chơi để giảm tải giật lag
+        cars = cars.filter(c => Math.hypot(c.x - player.x, c.y - player.y) < 2500);
+
+        // Spawning logic
+        const spawnRate = Math.max(15, 50 - Math.floor(difficultyMultiplier * 10)); // Sinh ma nhanh hơn chút
+        if (frameCount % spawnRate === 0) {
+            spawnEnemy();
+        }
+        if (frameCount % 100 === 0) {
+            spawnItem();
+        }
+        if (frameCount % 60 === 0) {
+            spawnCar();
+        }
+
+        // Cập nhật và vẽ Ô tô (chướng ngại vật)
+        cars.forEach(car => car.draw());
+
+        // Update and Draw Particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update();
+            if (particles[i].alpha <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+
+        // Update and Draw Items
+        for (let i = items.length - 1; i >= 0; i--) {
+            let item = items[i];
+            item.draw();
+            
+            // Player collision with item
+            let dist = Math.hypot(player.x - item.x, player.y - item.y);
+            if (dist - item.radius - player.radius < 0) {
+                if (item.type === 'score') {
+                    score += 10;
+                    scoreEl.innerText = score;
+                    playSound('eat');
+                    createExplosion(item.x, item.y, item.color, 5);
+                } else if (item.type === 'powerup') {
+                    score += 50;
+                    scoreEl.innerText = score;
+                    playSound('powerup');
+                    player.activatePowerup();
+                    createExplosion(item.x, item.y, item.color, 20);
+                }
+                items.splice(i, 1);
+            }
+        }
+
+        // Update and Draw Enemies
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let enemy = enemies[i];
+            enemy.update();
+            enemy.draw();
+
+            // Collision with Player
+            let dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (dist - enemy.radius - player.radius < -4) { // -4 for slight forgiveness
+                if (player.isInvincible) {
+                    // Máu ma văng ra (màu xanh lục)
+                    createExplosion(enemy.x, enemy.y, '#22c55e', 20);
+                    playSound('hit');
+                    score += 20;
+                    scoreEl.innerText = score;
+                    enemies.splice(i, 1);
+                    screenShake = 5;
+                } else {
+                    // Bị cắn! Game Over
+                    endGame();
+                }
+            }
+        }
+
+        // Player Update & Draw
+        player.update();
+        player.draw();
+
+        // Kết thúc dịch chuyển khung nhìn
+        ctx.restore(); 
+
+        // Draw Mobile Joystick if active (vẽ tĩnh trên UI)
+        drawJoystick();
+    }
+
+    function endGame() {
+        gameActive = false;
+        cancelAnimationFrame(animationId);
+        playSound('die');
+        
+        // Máu người văng ra (màu đỏ)
+        createExplosion(player.x, player.y, '#ef4444', 50);
+        
+        // Vẽ lại frame cuối cùng chứa vụ nổ máu theo hệ tọa độ Camera
+        ctx.fillStyle = '#030712'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+        drawCity();
+        particles.forEach(p => p.draw());
+        ctx.restore();
+
+        // Phủ màu đỏ máu lên toàn màn hình
+        ctx.fillStyle = 'rgba(69, 10, 10, 0.6)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        hud.classList.add('hidden');
+        gameOverScreen.classList.remove('hidden');
+        finalScoreEl.innerText = score;
+
+        const newHighscoreMsg = document.getElementById('new-highscore-msg');
+        newHighscoreMsg.classList.add('hidden');
+
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('sinhTonHighScore', highScore);
+            highScoreEl.innerText = highScore;
+            newHighscoreMsg.classList.remove('hidden');
+        }
+    }
+
+    // Button Listeners
+    startBtn.addEventListener('click', init);
+    restartBtn.addEventListener('click', init);
+
+    // Initial background draw
+    ctx.fillStyle = '#030712'; // Màu nền tĩnh nhựa đường
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+</script>
+</body>
+</html>
