@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Piggy Feast</title>
+    <title>Piggy Feast - Gourmet Flight</title>
+    
+    <!-- iOS Meta Tags for App Store & Web App -->
+    <meta name="apple-itunes-app" content="app-id=123456789"> <!-- Thay ID ứng dụng thật của bạn vào đây -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Piggy Feast">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2632/2632839.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
@@ -20,20 +28,28 @@
         .ui-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center;
-            align-items: center; z-index: 20; pointer-events: none;
+            align-items: center; z-index: 50; 
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
+
+        .ui-screen.hidden {
+            display: none !important;
+            pointer-events: none;
+            opacity: 0;
         }
 
         .menu-card {
             background: rgba(25, 15, 25, 0.9);
-            backdrop-filter: blur(12px);
             border: 2px solid rgba(236, 72, 153, 0.3);
             pointer-events: auto;
-            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(1);
+            animation: cardPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: scale(0.9) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+        @keyframes cardPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         .btn-pig {
@@ -68,6 +84,43 @@
             80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
         }
+
+        /* Banner Ads Styling */
+        #ad-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(15, 15, 25, 0.85);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .ad-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .ad-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
@@ -75,10 +128,11 @@
     <canvas id="gameCanvas"></canvas>
     <div id="level-up-msg">LEVEL UP!</div>
 
+    <!-- HUD -->
     <div id="hud" class="absolute top-0 left-0 w-full p-4 flex justify-between items-start pointer-events-none z-10 hidden">
         <div class="flex flex-col">
             <div class="flex items-baseline gap-2">
-                <span id="score-val" class="text-3xl font-extrabold text-pink-500 hud-text">Score: 6</span>
+                <span id="score-val" class="text-3xl font-extrabold text-pink-500 hud-text">Score: 10</span>
                 <span id="level-val" class="text-sm font-bold text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">LVL 1</span>
             </div>
             <span id="high-score-val" class="text-xs font-bold text-stone-400 tracking-widest uppercase mt-1">Best: 0</span>
@@ -91,24 +145,35 @@
         </button>
     </div>
 
+    <!-- START SCREEN -->
     <div id="start-screen" class="ui-screen">
         <div class="menu-card p-8 rounded-[32px] w-80 text-center">
             <div class="w-20 h-20 bg-pink-500 rounded-3xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-xl shadow-pink-900/40">🐷</div>
             <h1 class="text-3xl font-extrabold text-white mb-2 tracking-tight">PIGGY FEAST</h1>
-            <p class="text-stone-400 text-sm mb-8 leading-relaxed">Eat all food! Missed items cost 1 point. Reach 0 and it's Game Over!</p>
+            <p class="text-stone-400 text-sm mb-8 leading-relaxed">Fly and eat to stay alive! Purple candy gives +2 points. Avoid green viruses!</p>
             
             <button id="play-btn" class="btn-pig w-full py-4 text-white font-bold text-xl rounded-2xl mb-4">START FEAST</button>
             
             <div class="flex gap-2 justify-center mt-2">
                 <button id="mute-btn" class="w-12 h-12 bg-stone-800 rounded-xl flex items-center justify-center text-xl">🔊</button>
-                <button class="flex-1 bg-stone-800 text-stone-400 text-xs font-bold rounded-xl flex items-center justify-center hover:text-white transition-colors">PRIVACY</button>
+                <div class="flex-1 bg-stone-800 text-stone-400 text-[10px] font-bold rounded-xl flex items-center justify-center px-2 uppercase">Tap to Fly</div>
             </div>
         </div>
     </div>
 
+    <!-- PAUSE SCREEN -->
+    <div id="pause-screen" class="ui-screen hidden">
+        <div class="menu-card p-8 rounded-[32px] w-80 text-center">
+            <h2 class="text-3xl font-extrabold text-white mb-6">PAUSED</h2>
+            <button id="resume-btn" class="btn-pig w-full py-4 text-white font-bold text-xl rounded-2xl mb-4">RESUME</button>
+            <button onclick="location.reload()" class="text-stone-500 text-sm font-bold hover:text-white transition-colors">QUIT TO MENU</button>
+        </div>
+    </div>
+
+    <!-- DEATH SCREEN -->
     <div id="death-screen" class="ui-screen hidden">
         <div class="menu-card p-8 rounded-[32px] w-80 text-center">
-            <h2 class="text-2xl font-extrabold text-red-500 mb-2">OUT OF ENERGY...</h2>
+            <h2 id="death-msg" class="text-2xl font-extrabold text-red-500 mb-2">OUT OF ENERGY...</h2>
             <div class="bg-white/5 rounded-2xl p-4 mb-6">
                 <p class="text-stone-400 text-xs uppercase font-bold tracking-widest mb-1">Final Score</p>
                 <p id="final-score" class="text-4xl font-black text-white">0</p>
@@ -118,12 +183,32 @@
         </div>
     </div>
 
+    <!-- VICTORY SCREEN -->
     <div id="victory-screen" class="ui-screen hidden">
-        <div class="menu-card p-8 rounded-[32px] w-80 text-center border-yellow-500">
+        <div class="menu-card p-8 rounded-[32px] w-80 text-center border-yellow-500/50">
             <div class="text-5xl mb-4">👑</div>
-            <h2 class="text-2xl font-extrabold text-yellow-500 mb-2">FOOD KING!</h2>
-            <p class="text-stone-300 text-sm mb-6">You reached 3000 points!</p>
+            <h2 class="text-3xl font-extrabold text-yellow-400 mb-2">VICTORY!</h2>
+            <p class="text-stone-400 text-sm mb-6">You reached the legendary 500 points peak!</p>
+            <div class="bg-yellow-500/10 rounded-2xl p-4 mb-6 border border-yellow-500/30">
+                <p class="text-yellow-500 text-xs uppercase font-bold tracking-widest mb-1">Total Feast</p>
+                <p id="victory-score" class="text-4xl font-black text-white">500</p>
+            </div>
             <button id="victory-restart-btn" class="btn-pig w-full py-4 text-white font-bold text-xl rounded-2xl">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- AD BANNER FRAME -->
+    <div id="ad-banner">
+        <div class="ad-content">
+            <div class="ad-icon">💎</div>
+            <div class="flex-1 text-left">
+                <h4 class="text-white text-xs font-bold leading-tight">Piggy Plus Premium</h4>
+                <p class="text-stone-400 text-[10px]">Remove ads and get 2x energy!</p>
+            </div>
+            <button class="bg-yellow-500 text-black text-[10px] font-black px-3 py-1.5 rounded-full hover:scale-105 transition-transform">UPGRADE</button>
+            <button id="close-ad" class="text-stone-600 hover:text-white ml-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
     </div>
 
@@ -132,21 +217,25 @@
         const ctx = canvas.getContext('2d');
         const hud = document.getElementById('hud');
         const levelUpMsg = document.getElementById('level-up-msg');
+        const adBanner = document.getElementById('ad-banner');
         
         let gameState = 'MENU';
-        let score = 6;
+        let score = 10;
         let level = 1;
         let highScore = localStorage.getItem('pig_high_score') || 0;
         let isMuted = false;
         let lastTime = performance.now();
         let spawnTimer = 0;
+        let virusTimer = 0;
 
         const scoreVal = document.getElementById('score-val');
         const levelVal = document.getElementById('level-val');
         const highScoreVal = document.getElementById('high-score-val');
         const startScreen = document.getElementById('start-screen');
+        const pauseScreen = document.getElementById('pause-screen');
         const deathScreen = document.getElementById('death-screen');
         const victoryScreen = document.getElementById('victory-screen');
+        const deathMsg = document.getElementById('death-msg');
         
         highScoreVal.innerText = `Best: ${highScore}`;
 
@@ -177,6 +266,13 @@
                 gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
             } else if (type === 'levelup') {
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(440, audioCtx.currentTime);
@@ -184,6 +280,47 @@
                 gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.radius = Math.random() * 4 + 2;
+                this.color = color;
+                this.alpha = 1;
+                this.life = 1;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                this.alpha -= 0.02;
+                this.life -= 0.02;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class FloatingText {
+            constructor(x, y, text, color) {
+                this.x = x; this.y = y; this.text = text; this.color = color;
+                this.alpha = 1; this.vy = -1.5;
+            }
+            update() { this.y += this.vy; this.alpha -= 0.02; }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.font = 'bold 24px Plus Jakarta Sans';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.restore();
             }
         }
 
@@ -225,87 +362,144 @@
         class Pig {
             constructor() { this.reset(); }
             reset() {
-                this.x = 80; this.y = canvas.height / 2;
+                this.x = 100; this.y = canvas.height / 2;
                 this.radius = 22; this.velocity = 0;
-                this.gravity = 0.5; this.lift = -8;
+                this.gravity = 0.45; this.lift = -8.5;
                 this.rotation = 0;
+                this.chewFactor = 0;
             }
             jump() { this.velocity = this.lift; playSound('jump'); }
+            eat() { this.chewFactor = 1; }
             update() {
                 this.velocity += this.gravity;
                 this.y += this.velocity;
-                this.rotation = Math.min(Math.PI/8, Math.max(-Math.PI/8, this.velocity * 0.03));
+                this.rotation = Math.min(Math.PI/6, Math.max(-Math.PI/6, this.velocity * 0.04));
+                this.chewFactor *= 0.9;
 
-                if (this.y + this.radius > canvas.height) endGame();
+                if (this.y + this.radius > canvas.height - 60) endGame("CRASHED!"); // Offset for Banner
                 if (this.y - this.radius < 0) { this.y = this.radius; this.velocity = 0; }
             }
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.rotation);
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.beginPath(); ctx.ellipse(0, 15, 25, 8, 0, 0, Math.PI*2); ctx.fill();
                 ctx.fillStyle = '#f472b6';
-                ctx.beginPath(); ctx.ellipse(0, 0, 24, 20, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(0, 0, 26 + (this.chewFactor * 5), 22, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = '#ec4899';
-                ctx.beginPath(); ctx.ellipse(18, 2, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(20, 2, 9, 7, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = '#9d174d'; 
-                ctx.beginPath(); ctx.arc(16, 2, 1.5, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(20, 2, 1.5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(18, 2, 1.8, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(22, 2, 1.8, 0, Math.PI*2); ctx.fill();
                 ctx.fillStyle = 'black';
-                ctx.beginPath(); ctx.arc(10, -5, 2.5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(12, -6, 3, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(13.5, -7, 1, 0, Math.PI*2); ctx.fill();
                 ctx.fillStyle = '#f472b6';
-                ctx.beginPath(); ctx.moveTo(-5, -15); ctx.lineTo(2, -25); ctx.lineTo(10, -15); ctx.fill();
-                ctx.beginPath(); ctx.moveTo(-12, -12); ctx.lineTo(-18, -22); ctx.lineTo(-5, -12); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(-5, -16); ctx.lineTo(4, -28); ctx.lineTo(12, -16); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(-14, -13); ctx.lineTo(-22, -24); ctx.lineTo(-7, -13); ctx.fill();
                 ctx.strokeStyle = '#ec4899'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(-24, 0); ctx.quadraticCurveTo(-30, -10, -25, -15); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-26, 0); ctx.quadraticCurveTo(-32, -10, -27, -15); ctx.stroke();
                 ctx.restore();
             }
         }
 
         class Food {
             constructor() {
-                const types = ['APPLE', 'BURGER', 'PIZZA'];
+                const types = ['APPLE', 'BURGER', 'PIZZA', 'CANDY'];
                 this.type = types[Math.floor(Math.random() * types.length)];
-                this.radius = 16;
+                this.radius = 18;
                 this.x = canvas.width + 50;
-                this.y = Math.random() * (canvas.height - 100) + 50;
-                this.speed = (Math.random() * 2 + 3) + (level * 0.5);
-                this.dy = (Math.random() - 0.5) * 2;
+                this.y = Math.random() * (canvas.height - 250) + 75;
+                this.speed = (Math.random() * 2 + 3.5) + (level * 0.45);
+                this.dy = (Math.random() - 0.5) * 1.5;
                 this.angle = 0;
             }
             update() {
                 this.x -= this.speed;
                 this.y += this.dy;
-                if (this.y < 50 || this.y > canvas.height - 50) this.dy *= -1;
-                this.angle += 0.05;
+                if (this.y < 75 || this.y > canvas.height - 120) this.dy *= -1;
+                this.angle += 0.04;
             }
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
                 if (this.type === 'APPLE') {
-                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, 2, 12, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle = '#22c55e'; ctx.fillRect(-2, -14, 4, 6);
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, 2, 14, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#22c55e'; ctx.fillRect(-2, -16, 4, 8);
                 } else if (this.type === 'BURGER') {
-                    ctx.fillStyle = '#fcd34d'; ctx.beginPath(); ctx.arc(0, 0, 14, Math.PI, 0); ctx.fill(); 
-                    ctx.fillStyle = '#92400e'; ctx.fillRect(-14, 0, 28, 4); 
-                    ctx.fillStyle = '#fcd34d'; ctx.fillRect(-14, 4, 28, 6); 
+                    ctx.fillStyle = '#fcd34d'; ctx.beginPath(); ctx.arc(0, 0, 16, Math.PI, 0); ctx.fill(); 
+                    ctx.fillStyle = '#92400e'; ctx.fillRect(-16, 0, 32, 5); 
+                    ctx.fillStyle = '#fcd34d'; ctx.fillRect(-16, 5, 32, 7); 
                 } else if (this.type === 'PIZZA') {
                     ctx.fillStyle = '#fbbf24';
-                    ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(12, 12); ctx.lineTo(-12, 12); ctx.closePath(); ctx.fill();
-                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(2, 2, 2, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(-3, 6, 2, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(14, 14); ctx.lineTo(-14, 14); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(2, 2, 3, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.ellipse(0, 0, 16, 12, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(-24, -8); ctx.lineTo(-24, 8); ctx.closePath(); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(24, -8); ctx.lineTo(24, 8); ctx.closePath(); ctx.stroke();
                 }
                 ctx.restore();
             }
         }
 
+        class Virus {
+            constructor() {
+                this.radius = 20;
+                this.x = canvas.width + 100;
+                this.startY = Math.random() * (canvas.height - 300) + 100;
+                this.y = this.startY;
+                this.speed = (Math.random() * 2 + 5) + (level * 0.6);
+                this.amplitude = Math.random() * 80 + 40;
+                this.frequency = Math.random() * 0.04 + 0.02;
+                this.offset = Math.random() * Math.PI * 2;
+                this.time = 0;
+            }
+            update() {
+                this.x -= this.speed;
+                this.time += this.frequency;
+                this.y = this.startY + Math.sin(this.time + this.offset) * this.amplitude;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.time * 2);
+                const grad = ctx.createRadialGradient(0,0,0,0,0,this.radius + 10);
+                grad.addColorStop(0, 'rgba(57, 255, 20, 0.4)');
+                grad.addColorStop(1, 'rgba(57, 255, 20, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(0,0, this.radius + 10, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#39FF14'; 
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill();
+                for(let i=0; i<8; i++) {
+                    ctx.rotate(Math.PI / 4);
+                    ctx.fillRect(this.radius - 2, -4, 10, 8);
+                }
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(-6, -5, 5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(6, -5, 5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(-6, -5, 2.5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(6, -5, 2.5, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
         let stars = [];
-        for(let i=0; i<80; i++) stars.push({x: Math.random()*2000, y: Math.random()*2000, s: Math.random()*2});
+        for(let i=0; i<100; i++) stars.push({x: Math.random()*2000, y: Math.random()*2000, s: Math.random()*2.5});
         let shootingStars = [];
-        for(let i=0; i<3; i++) shootingStars.push(new ShootingStar());
+        for(let i=0; i<4; i++) shootingStars.push(new ShootingStar());
 
         const pig = new Pig();
-        let entities = [];
+        let foods = [];
+        let viruses = [];
+        let particles = [];
+        let floatingTexts = [];
 
         function resize() {
             canvas.width = window.innerWidth;
@@ -316,11 +510,17 @@
 
         function spawn() {
             spawnTimer++;
-            let baseRate = 50;
-            let currentRate = Math.max(15, baseRate - (level * 4));
-            if (spawnTimer > currentRate) {
+            let foodRate = Math.max(12, 45 - (level * 3.5));
+            if (spawnTimer > foodRate) {
                 spawnTimer = 0;
-                entities.push(new Food());
+                foods.push(new Food());
+            }
+
+            virusTimer++;
+            let virusRate = Math.max(35, 110 - (level * 8)); 
+            if (virusTimer > virusRate) {
+                virusTimer = 0;
+                viruses.push(new Virus());
             }
         }
 
@@ -331,7 +531,7 @@
             pig.update();
             spawn();
 
-            let nextLevel = Math.floor(score / 50) + 1;
+            let nextLevel = Math.floor((score - 10) / 40) + 1;
             if (nextLevel > level) {
                 level = nextLevel;
                 levelVal.innerText = `LVL ${level}`;
@@ -341,19 +541,57 @@
                 levelUpMsg.classList.add('animate-level-up');
             }
 
-            entities.forEach((e, i) => {
-                e.update();
-                const dist = Math.hypot(pig.x - e.x, pig.y - e.y);
-                if (dist < pig.radius + e.radius - 5) {
-                    score++; playSound('eat'); entities.splice(i, 1);
+            foods.forEach((f, i) => {
+                f.update();
+                const dist = Math.hypot(pig.x - f.x, pig.y - f.y);
+                if (dist < pig.radius + f.radius) {
+                    let points = (f.type === 'CANDY') ? 2 : 1;
+                    score += points;
+                    playSound('eat'); 
+                    pig.eat();
+                    if (points === 2) {
+                        floatingTexts.push(new FloatingText(f.x, f.y, "+2", "#a855f7"));
+                        for(let j=0; j<12; j++) particles.push(new Particle(f.x, f.y, '#a855f7'));
+                    } else {
+                        for(let j=0; j<8; j++) particles.push(new Particle(f.x, f.y, '#ec4899'));
+                    }
+                    foods.splice(i, 1);
                 } 
-                else if (e.x < -20) {
-                    score--; entities.splice(i, 1);
+                else if (f.x < -50) {
+                    score--; 
+                    floatingTexts.push(new FloatingText(100, pig.y, "-1 ENERGY", "#ef4444"));
+                    foods.splice(i, 1);
                 }
-                if (score <= 0) endGame();
             });
 
-            if (score >= 3000) { gameState = 'VICTORY'; victoryScreen.classList.remove('hidden'); }
+            viruses.forEach((v, i) => {
+                v.update();
+                const dist = Math.hypot(pig.x - v.x, pig.y - v.y);
+                if (dist < pig.radius + v.radius - 5) {
+                    playSound('hit');
+                    endGame("INFECTED!");
+                }
+                if (v.x < -100) viruses.splice(i, 1);
+            });
+
+            particles.forEach((p, i) => {
+                p.update();
+                if (p.life <= 0) particles.splice(i, 1);
+            });
+
+            floatingTexts.forEach((t, i) => {
+                t.update();
+                if (t.alpha <= 0) floatingTexts.splice(i, 1);
+            });
+
+            if (score <= 0) endGame("OUT OF ENERGY!");
+            if (score >= 500) { 
+                gameState = 'VICTORY'; 
+                hideAllScreens();
+                hud.classList.add('hidden');
+                victoryScreen.classList.remove('hidden'); 
+                document.getElementById('victory-score').innerText = score;
+            }
             scoreVal.innerText = `Score: ${score}`;
         }
 
@@ -361,15 +599,21 @@
             ctx.fillStyle = '#050510'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'white';
             stars.forEach(s => {
-                ctx.globalAlpha = 0.6;
+                ctx.globalAlpha = 0.5;
                 ctx.beginPath(); ctx.arc(s.x % canvas.width, s.y % canvas.height, s.s, 0, Math.PI*2); ctx.fill();
             });
             ctx.globalAlpha = 1;
             shootingStars.forEach(s => s.draw());
-            ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(canvas.width-80, 80, 35, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fef3c7'; 
+            ctx.shadowBlur = 40; ctx.shadowColor = 'rgba(254, 243, 199, 0.4)';
+            ctx.beginPath(); ctx.arc(canvas.width-100, 100, 40, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
 
             if (gameState !== 'MENU') {
-                entities.forEach(e => e.draw());
+                foods.forEach(f => f.draw());
+                viruses.forEach(v => v.draw());
+                particles.forEach(p => p.draw());
+                floatingTexts.forEach(t => t.draw());
                 pig.draw();
             }
         }
@@ -380,15 +624,40 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function startGame() {
-            initAudio(); score = 6; level = 1; entities = []; pig.reset();
-            levelVal.innerText = `LVL 1`;
-            gameState = 'PLAYING';
-            startScreen.classList.add('hidden'); deathScreen.classList.add('hidden'); victoryScreen.classList.add('hidden'); hud.classList.remove('hidden');
+        function hideAllScreens() {
+            startScreen.classList.add('hidden');
+            deathScreen.classList.add('hidden');
+            victoryScreen.classList.add('hidden');
+            pauseScreen.classList.add('hidden');
         }
 
-        function endGame() {
-            gameState = 'GAMEOVER'; hud.classList.add('hidden'); deathScreen.classList.remove('hidden');
+        function startGame() {
+            initAudio(); 
+            score = 10; level = 1; 
+            foods = []; viruses = []; particles = []; floatingTexts = []; 
+            pig.reset();
+            levelVal.innerText = `LVL 1`;
+            gameState = 'PLAYING';
+            hideAllScreens();
+            hud.classList.remove('hidden');
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                pauseScreen.classList.remove('hidden');
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseScreen.classList.add('hidden');
+            }
+        }
+
+        function endGame(msg) {
+            gameState = 'GAMEOVER'; 
+            hud.classList.add('hidden'); 
+            hideAllScreens();
+            deathScreen.classList.remove('hidden');
+            deathMsg.innerText = msg;
             document.getElementById('final-score').innerText = Math.max(0, score);
             if (score > highScore) {
                 highScore = score; localStorage.setItem('pig_high_score', highScore);
@@ -397,22 +666,27 @@
         }
 
         const inputAction = (e) => {
-            if (e.target.closest('button')) return;
+            if (e.target.closest('button') || e.target.closest('a')) return;
             if (gameState === 'PLAYING') pig.jump();
+            if (gameState === 'MENU') startGame();
         };
 
         window.addEventListener('mousedown', inputAction);
         window.addEventListener('touchstart', (e) => inputAction(e), {passive: true});
+        
         document.getElementById('play-btn').onclick = startGame;
         document.getElementById('restart-btn').onclick = startGame;
         document.getElementById('victory-restart-btn').onclick = startGame;
+        document.getElementById('resume-btn').onclick = togglePause;
         document.getElementById('mute-btn').onclick = (e) => {
             isMuted = !isMuted; e.target.innerText = isMuted ? '🔇' : '🔊'; initAudio();
         };
-        document.getElementById('pause-btn').onclick = () => {
-            if (gameState === 'PLAYING') gameState = 'PAUSED';
-            else if (gameState === 'PAUSED') gameState = 'PLAYING';
+        document.getElementById('pause-btn').onclick = togglePause;
+        
+        document.getElementById('close-ad').onclick = () => {
+            adBanner.style.transform = 'translateY(100%)';
         };
+
         requestAnimationFrame(gameLoop);
     </script>
 </body>
