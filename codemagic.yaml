@@ -10,20 +10,25 @@ workflows:
           cd piggy-feast
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/ios
-      - name: Capacitor Build
+      - name: Preparing Web Folder
         script: |
           cd piggy-feast
           mkdir -p www
           cp index.html www/
-          npx cap init "Piggy Feast" com.quyet.piggyfeast --web-dir www || true
-          npx cap add ios || true
+      - name: Capacitor Build
+        script: |
+          cd piggy-feast
+          # Xóa sạch làm lại từ đầu để tránh lỗi tồn đọng
+          rm -rf ios
+          npx cap init "Piggy Feast" com.quyet.piggyfeast --web-dir www --path .
+          npx cap add ios
           npx cap copy
-          # Lệnh xây dựng với đường dẫn chính xác
+          # Lệnh xây dựng với đường dẫn tuyệt đối để máy chủ không thể lạc đường
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphoneos -allowProvisioningUpdates build
     artifacts:
-      - piggy-feast/ios/App/Build/Products/Debug-iphoneos/*.app
-      - piggy-feast/ios/App/*.ipa
-      - "**/Build/Products/**/*.app"
+      - "**/Build/Products/Debug-iphoneos/*.app"
+      - "**/ios/App/*.ipa"
+      - "**/ios/App/App.xcarchive"
     publishing:
       email:
         recipients:
