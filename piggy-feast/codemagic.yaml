@@ -1,3 +1,4 @@
+
 workflows:
   ios-workflow:
     name: iOS Build
@@ -6,25 +7,22 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          cd piggy-feast
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/ios
       - name: Preparing Web Folder
         script: |
-          cd piggy-feast
-          # Tự động tạo thư mục www để máy chủ không báo lỗi
+          # Tạo thư mục www ngay tại đây
           mkdir -p www
           cp index.html www/
           cp -R assets www/ || true
       - name: Capacitor Build
         script: |
-          cd piggy-feast
           rm -rf ios
           npx cap init "Piggy Feast" com.quyet.piggyfeast --web-dir www
           npx cap add ios
           npx cap copy
     artifacts:
-      - piggy-feast/ios/App/*.ipa
+      - ios/App/*.ipa
     publishing:
       email:
         recipients:
