@@ -1,3 +1,4 @@
+
 workflows:
   ios-workflow:
     name: iOS Build
@@ -11,12 +12,13 @@ workflows:
       - name: Capacitor Build
         script: |
           cd piggy-feast
-          npx cap add ios
+          npx cap add ios || true
           npx cap copy
+          npx cap update
     artifacts:
+      - piggy-feast/ios/App/*.ipa
       - piggy-feast/ios/App/App.xcarchive
-      - piggy-feast/ios/App/App.ipa
     publishing:
       email:
         recipients:
-          - your-email@gmail.com
+          - daovanquyet231995@gmail.com
