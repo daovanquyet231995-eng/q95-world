@@ -1,0 +1,6 @@
+Cách xử lý dứt điểm để Build ngay:
+Bạn hãy làm bước "Chép sang chỗ mới" cho 2 file này từ trong thư mục piggy-feast ra ngoài thư mục gốc y hệt như bạn đã làm với file index.html nhé:
+
+Với file package.json: Vào piggy-feast -> Mở package.json -> Copy nội dung -> Ra ngoài tạo file mới tên là package.json -> Dán vào -> Lưu (Commit).
+
+Với file capacitor.config.json: Vào piggy-feast -> Mở capacitor.config.json -> Copy nội dung -> Ra ngoài tạo file mới tên là capacitor.config.json -> Dán vào -> Lưu (Commit).
