@@ -5,15 +5,27 @@ workflows:
     instance_type: mac_mini_m2
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: |
+          cd piggy-feast
+          npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/ios
+      - name: Preparing Web Folder
+        script: |
+          cd piggy-feast
+          # Tự động tạo thư mục www để máy chủ không báo lỗi
+          mkdir -p www
+          cp index.html www/
+          cp -R assets www/ || true
       - name: Capacitor Build
         script: |
+          cd piggy-feast
+          rm -rf ios
+          npx cap init "Piggy Feast" com.quyet.piggyfeast --web-dir www
           npx cap add ios
           npx cap copy
     artifacts:
-      - ios/App/App.xcarchive
-      - ios/App/App.ipa
+      - piggy-feast/ios/App/*.ipa
     publishing:
       email:
         recipients:
-          - your-email@gmail.com # Thay email của bạn vào đây
+          - daovanquyet231995@gmail.com
