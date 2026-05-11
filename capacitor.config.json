@@ -1,0 +1,6 @@
+{
+  "appId": "com.quyet.piggyfeast",
+  "appName": "Piggy Feast",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
