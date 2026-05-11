@@ -1,0 +1,22 @@
+workflows:
+  ios-workflow:
+    name: iOS Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd piggy-feast
+          npm install
+      - name: Capacitor Build
+        script: |
+          cd piggy-feast
+          npx cap add ios
+          npx cap copy
+    artifacts:
+      - piggy-feast/ios/App/App.xcarchive
+      - piggy-feast/ios/App/App.ipa
+    publishing:
+      email:
+        recipients:
+          - your-email@gmail.com
