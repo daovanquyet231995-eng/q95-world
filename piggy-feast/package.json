@@ -1,0 +1,13 @@
+{
+  "name": "piggy-feast",
+  "version": "1.0.0",
+  "description": "Piggy Feast Gourmet Flight",
+  "main": "index.html",
+  "dependencies": {
+    "@capacitor/core": "latest",
+    "@capacitor/ios": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest"
+  }
+}
