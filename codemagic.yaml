@@ -7,17 +7,20 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          cd piggy-feast
           npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/ios
+      - name: Preparing Web Folder
+        script: |
+          mkdir -p www
+          cp index.html www/
       - name: Capacitor Build
         script: |
-          cd piggy-feast
-          npx cap add ios || true
+          rm -rf ios
+          npx cap init "Piggy Feast" com.quyet.piggyfeast --web-dir www
+          npx cap add ios
           npx cap copy
-          npx cap update
     artifacts:
-      - piggy-feast/ios/App/*.ipa
-      - piggy-feast/ios/App/App.xcarchive
+      - ios/App/*.ipa
     publishing:
       email:
         recipients:
