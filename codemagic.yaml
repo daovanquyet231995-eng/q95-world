@@ -13,18 +13,17 @@ workflows:
       - name: Capacitor Build
         script: |
           cd piggy-feast
-          # Tạo thư mục www nếu chưa có
           mkdir -p www
           cp index.html www/
-          # Khởi tạo và tạo file dự án Xcode
           npx cap init "Piggy Feast" com.quyet.piggyfeast --web-dir www || true
           npx cap add ios || true
           npx cap copy
-          # Lệnh quan trọng để tạo file IPA
+          # Lệnh xây dựng với đường dẫn chính xác
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphoneos -allowProvisioningUpdates build
     artifacts:
       - piggy-feast/ios/App/Build/Products/Debug-iphoneos/*.app
       - piggy-feast/ios/App/*.ipa
+      - "**/Build/Products/**/*.app"
     publishing:
       email:
         recipients:
