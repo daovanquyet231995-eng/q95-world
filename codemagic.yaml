@@ -1,8 +1,13 @@
+
 workflows:
   ios-workflow:
     name: iOS Build
     max_build_duration: 60
     instance_type: mac_mini_m2
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.quyet.piggyfeast
     scripts:
       - name: Install dependencies
         script: |
@@ -13,16 +18,16 @@ workflows:
           mkdir -p www
           cp index.html www/
           cp -R assets www/ || true
-      - name: Capacitor Build
+      - name: Capacitor Build & Sign
         script: |
           rm -rf ios
           npx cap init "Piggy Feast" com.quyet.piggyfeast --web-dir www
           npx cap add ios
           npx cap copy
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphoneos -allowProvisioningUpdates build
+          xcode-project use-profiles
+          xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App --config Release
     artifacts:
-      - "**/Build/Products/Debug-iphoneos/*.app"
-      - "**/ios/App/*.ipa"
+      - "**/*.ipa"
     publishing:
       email:
         recipients:
